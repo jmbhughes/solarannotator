@@ -12,6 +12,7 @@ setup(
     install_requires=["PyQt5",
                       "matplotlib",
                       "astropy"],
-    scripts=['bin/SolarAnnotator'],
-    data_files=[('solarannotator', ['cfg/default.json'])]
+    data_files=[('solarannotator', ['cfg/default.json'])],
+    entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
+
 )

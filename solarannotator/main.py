@@ -8,14 +8,19 @@ import os
 import sys
 
 
-def main(config_path):
+def main():
+    parser = argparse.ArgumentParser(description='Annotate solar images with labels')
+    parser.add_argument('--config', help='a configuration file to load',
+                        default=os.path.join(sys.prefix, 'solarannotator/default.json'))
+    args = parser.parse_args()
+
     # Check whether there is already a running QApplication (e.g., if running
     # from an IDE).
     qapp = QtWidgets.QApplication.instance()
     if not qapp:
         qapp = QtWidgets.QApplication(sys.argv)
 
-    app = ApplicationWindow(config_path)
+    app = ApplicationWindow(args.config)
     app.show()
     app.activateWindow()
     app.raise_()
@@ -23,8 +28,4 @@ def main(config_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Annotate solar images with labels')
-    parser.add_argument('--config', help='a configuration file to load',
-                        default=os.path.join(sys.prefix, 'solarannotator/default.json'))
-    args = parser.parse_args()
-    main(args.config)
+    main()
