@@ -9,7 +9,7 @@ setup(
     author='J. Marcus Hughes',
     author_email='j-marcus.hughes@noaa.gov',
     description='A tool to annotate images of the Sun',
-    install_requires=[PyQt5,
-                      matplotlib,
-                      astropy]
+    install_requires=["PyQt5",
+                      "matplotlib",
+                      "astropy"]
 )
