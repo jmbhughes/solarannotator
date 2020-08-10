@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='solarannotator',
     version='0.1',
-    packages=[''],
+    packages=['solarannotator'],
     url='',
     license='',
     author='J. Marcus Hughes',
@@ -11,5 +11,7 @@ setup(
     description='A tool to annotate images of the Sun',
     install_requires=["PyQt5",
                       "matplotlib",
-                      "astropy"]
+                      "astropy"],
+    scripts=['bin/SolarAnnotator'],
+    data_files=[('solarannotator', ['cfg/default.json'])]
 )

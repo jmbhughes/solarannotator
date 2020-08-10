@@ -11,7 +11,7 @@ example) by setting the ``MPLBACKEND`` environment variable to "Qt4Agg" or
 
 import sys
 import PyQt5
-from PyQt5 import QtCore, QtGui, uic, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog
 from PyQt5.QtGui import QIcon
 
@@ -22,7 +22,7 @@ import numpy as np
 from matplotlib.widgets import LassoSelector
 
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
-if is_pyqt5():
+if is_pyqt5():  # TODO: update to use the non-deprecated approach
     from matplotlib.backends.backend_qt5agg import (
         FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 else:
@@ -36,23 +36,25 @@ if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
 if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
-composite = fits.open("/home/marcus/Desktop/dr_suvi-l2-ci195_g16_s20200701T000000Z_e20200701T000400Z_v1-0-1.fits")
-thmap = fits.open("/home/marcus/Desktop/dr_suvi-l2-thmap_g16_s20200701T000000Z_e20200701T000400Z_v1-0-2.fits")
+from .config import Config
 
 
 class AnnotationWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        self.preview_data = np.zeros((1280, 1280))
+        self.thmap_data = np.zeros((1280, 1280))
+
         layout = QtWidgets.QVBoxLayout()
 
         self.fig = Figure(figsize=(10, 5))
         static_canvas = FigureCanvas(self.fig)
         layout.addWidget(static_canvas)
-        #self.addToolBar(NavigationToolbar(static_canvas, self))
 
         self.axs = static_canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
-        self.preview_axesimage = self.axs[0].imshow(composite[1].data, vmin=0, vmax=1)
-        self.thmap_axesimage = self.axs[1].imshow(thmap[0].data, vmin=0, vmax=9)  # TODO: rename with better name
+        self.preview_axesimage = self.axs[0].imshow(self.preview_data)
+        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data, vmin=0, vmax=9)
         self.axs[0].set_axis_off()
         self.axs[1].set_axis_off()
 
@@ -61,7 +63,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         # add selection layer for lasso
-        self.selection_array = thmap[0].data.copy()
+        self.selection_array = self.thmap_data
         self.history = []  # the history of regions drawn for undo feature, just a list of (m,n) thematic maps
         self.shape = (1280, 1280)  # TODO: replace with dynamic detection
         self.pix = np.arange(self.shape[0])  # assumes square image
@@ -82,7 +84,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.history.append(self.selection_array.copy())
         self.selection_array = self.updateArray(self.selection_array,
                                                 ind,
-                                                0)
+                                                1)
         self.thmap_axesimage.set_data(self.selection_array)
         self.fig.canvas.draw_idle()
 
@@ -99,10 +101,12 @@ class AnnotationWidget(QtWidgets.QWidget):
         new_array[lin[indices]] = value
         return new_array.reshape(array.shape)
 
+
 class ApplicationWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, config_path):
         super().__init__()
         self.initUI()
+        config = Config(config_path)
 
     def initUI(self):
         self._main = QtWidgets.QWidget()
@@ -194,16 +198,3 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if fname != ('', ''):
            pass # TODO : actually save a thematic map
 
-
-if __name__ == "__main__":
-    # Check whether there is already a running QApplication (e.g., if running
-    # from an IDE).
-    qapp = QtWidgets.QApplication.instance()
-    if not qapp:
-        qapp = QtWidgets.QApplication(sys.argv)
-
-    app = ApplicationWindow()
-    app.show()
-    app.activateWindow()
-    app.raise_()
-    qapp.exec_()
