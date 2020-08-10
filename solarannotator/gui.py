@@ -12,7 +12,7 @@ example) by setting the ``MPLBACKEND`` environment variable to "Qt4Agg" or
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog
+from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton
 from PyQt5.QtGui import QIcon
 
 from astropy.io import fits
@@ -37,11 +37,14 @@ if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
 from .config import Config
+from .io import ThematicMap
 
 
 class AnnotationWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.thmap = None
+        self.current_theme_index = 0
 
         self.preview_data = np.zeros((1280, 1280))
         self.thmap_data = np.zeros((1280, 1280))
@@ -54,7 +57,8 @@ class AnnotationWidget(QtWidgets.QWidget):
 
         self.axs = static_canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
         self.preview_axesimage = self.axs[0].imshow(self.preview_data)
-        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data, vmin=0, vmax=9)
+        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data,
+                                                  vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
         self.axs[1].set_axis_off()
 
@@ -63,7 +67,6 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         # add selection layer for lasso
-        self.selection_array = self.thmap_data
         self.history = []  # the history of regions drawn for undo feature, just a list of (m,n) thematic maps
         self.shape = (1280, 1280)  # TODO: replace with dynamic detection
         self.pix = np.arange(self.shape[0])  # assumes square image
@@ -81,11 +84,11 @@ class AnnotationWidget(QtWidgets.QWidget):
         """
         p = path.Path(verts)
         ind = p.contains_points(self.pix, radius=1)
-        self.history.append(self.selection_array.copy())
-        self.selection_array = self.updateArray(self.selection_array,
+        self.history.append(self.thmap_data.copy())
+        self.thmap_data = self.updateArray(self.thmap_data,
                                                 ind,
-                                                1)
-        self.thmap_axesimage.set_data(self.selection_array)
+                                                self.current_theme_index)
+        self.thmap_axesimage.set_data(self.thmap_data)
         self.fig.canvas.draw_idle()
 
     def updateArray(self, array, indices, value):
@@ -101,12 +104,18 @@ class AnnotationWidget(QtWidgets.QWidget):
         new_array[lin[indices]] = value
         return new_array.reshape(array.shape)
 
+    def loadThematicMap(self, thmap):
+        self.thmap = thmap
+        self.thmap_data = thmap.data
+        self.thmap_axesimage.set_data(self.thmap_data)
+        self.fig.canvas.draw_idle()
+
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self, config_path):
         super().__init__()
+        self.config = Config(config_path)
         self.initUI()
-        config = Config(config_path)
 
     def initUI(self):
         self._main = QtWidgets.QWidget()
@@ -115,10 +124,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._setup_menubar()
 
         layout = QtWidgets.QVBoxLayout(self._main)
-        annotator = AnnotationWidget()
-        layout.addWidget(annotator)
+        self.annotator = AnnotationWidget(self.config)
+        layout.addWidget(self.annotator)
 
-        control_layout = QtWidgets.QHBoxLayout()
+        self._setup_control_layout()
+        layout.addLayout(self.control_layout)
+
+    def _setup_control_layout(self):
+        self.control_layout = QtWidgets.QHBoxLayout()
         # Initialize tab screen
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
@@ -136,15 +149,30 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tab1.setLayout(self.tab1.layout)
 
         # Add tabs to widget
-        control_layout.addWidget(self.tabs)
+        self.control_layout.addWidget(self.tabs)
 
-        label1 = QLabel()
-        label2 = QLabel()
-        label1.setText("Label1")
-        label2.setText("Label2")
-        control_layout.addWidget(label1)
-        control_layout.addWidget(label2)
-        layout.addLayout(control_layout)
+        theme_selection_layout = QtWidgets.QVBoxLayout()
+        radiobuttons = dict()
+
+        # add unlabelled button
+        radiobuttons['unlabeled'] = QRadioButton("unlabeled")
+        radiobuttons['unlabeled'].index = 0
+        radiobuttons['unlabeled'].setChecked(True)
+        radiobuttons['unlabeled'].toggled.connect(self.onClickedRadioButton)
+        theme_selection_layout.addWidget(radiobuttons['unlabeled'])
+
+        # add rest of theme buttons
+        for theme, index in self.config.solar_class_index.items():
+            radiobuttons[theme] = QRadioButton(theme)
+            radiobuttons[theme].index = index
+            radiobuttons[theme].toggled.connect(self.onClickedRadioButton)
+            theme_selection_layout.addWidget(radiobuttons[theme])
+        self.control_layout.addLayout(theme_selection_layout)
+
+    def onClickedRadioButton(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            self.annotator.current_theme_index = radioButton.index
 
     def _setup_menubar(self):
         self.mainMenu = self.menuBar()
@@ -188,9 +216,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         dlg = QFileDialog()
         fname = dlg.getOpenFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
         if fname != ('', ''):
-            with fits.open(fname[0]) as hdulist:
-                data = hdulist[0].data
-                print(data)
+            thmap = ThematicMap.load(fname[0])
+            if thmap.complies_with_mapping(self.config.solar_class_name):
+                self.annotator.loadThematicMap(thmap)
+            else:
+                print("prompt error")
 
     def file_save(self):
         dlg = QFileDialog()

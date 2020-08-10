@@ -1,6 +1,5 @@
 {
 "classes":{
-    "unlabeled":0,
     "outer_space":1,
     "bright_region":3,
     "filament":4,
@@ -13,15 +12,14 @@
 
   "display":{
     "colors":{
-      "unlabeled":"white",
-      "outer_space": "#191970",
-      "bright_region": "yellow",
-      "filament": "#FF3E96",
-      "prominence": "#FF69B4",
-      "coronal_hole": "#0085b2",
-      "quiet_sun": "#006400",
-      "limb": "#8FBC8F",
-      "flare": "#ffdb99"
+      "outer_space": "black",
+      "bright_region": "#F0E442",
+      "filament": "#D55E00",
+      "prominence": "#E69F00",
+      "coronal_hole": "#009E73",
+      "quiet_sun": "#0072B2",
+      "limb": "#56B4E9",
+      "flare": "#CC79A7"
     },
 
     "channels":{

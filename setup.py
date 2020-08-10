@@ -11,7 +11,8 @@ setup(
     description='A tool to annotate images of the Sun',
     install_requires=["PyQt5",
                       "matplotlib",
-                      "astropy"],
+                      "astropy",
+                      "numpy"],
     data_files=[('solarannotator', ['cfg/default.json'])],
     entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
 
