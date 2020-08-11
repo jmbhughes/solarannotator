@@ -12,7 +12,7 @@ example) by setting the ``MPLBACKEND`` environment variable to "Qt4Agg" or
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton
+from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox
 from PyQt5.QtGui import QIcon
 
 from astropy.io import fits
@@ -20,7 +20,6 @@ from matplotlib import path
 
 import numpy as np
 from matplotlib.widgets import LassoSelector
-
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
 if is_pyqt5():  # TODO: update to use the non-deprecated approach
     from matplotlib.backends.backend_qt5agg import (
@@ -37,13 +36,14 @@ if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
 from .config import Config
-from .io import ThematicMap
+from .io import ThematicMap, ImageSet
 
 
 class AnnotationWidget(QtWidgets.QWidget):
     def __init__(self, config):
         super().__init__()
         self.thmap = None
+        self.composites = None
         self.current_theme_index = 0
 
         self.preview_data = np.zeros((1280, 1280))
@@ -56,7 +56,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         layout.addWidget(static_canvas)
 
         self.axs = static_canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
-        self.preview_axesimage = self.axs[0].imshow(self.preview_data)
+        self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=5, cmap='gray')
         self.thmap_axesimage = self.axs[1].imshow(self.thmap_data,
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
@@ -67,7 +67,6 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         # add selection layer for lasso
-        self.history = []  # the history of regions drawn for undo feature, just a list of (m,n) thematic maps
         self.shape = (1280, 1280)  # TODO: replace with dynamic detection
         self.pix = np.arange(self.shape[0])  # assumes square image
         xv, yv = np.meshgrid(self.pix, self.pix)
@@ -84,7 +83,6 @@ class AnnotationWidget(QtWidgets.QWidget):
         """
         p = path.Path(verts)
         ind = p.contains_points(self.pix, radius=1)
-        self.history.append(self.thmap_data.copy())
         self.thmap_data = self.updateArray(self.thmap_data,
                                                 ind,
                                                 self.current_theme_index)
@@ -108,7 +106,10 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.thmap = thmap
         self.thmap_data = thmap.data
         self.thmap_axesimage.set_data(self.thmap_data)
+        self.composites = ImageSet.retrieve(thmap.date_obs)
+        self.preview_axesimage.set_data(self.composites[195].data)
         self.fig.canvas.draw_idle()
+
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -212,7 +213,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.editMenu.addAction(undoEdit)
 
     def file_open(self):
-        # TODO: actually update the thematic map
         dlg = QFileDialog()
         fname = dlg.getOpenFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
         if fname != ('', ''):
@@ -220,7 +220,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             if thmap.complies_with_mapping(self.config.solar_class_name):
                 self.annotator.loadThematicMap(thmap)
             else:
-                print("prompt error")
+                QMessageBox.critical(self,
+                                     'Error: Could not open',
+                                     'Thematic map could not open because theme mapping differs from configuration',
+                                      QMessageBox.Close)
+
 
     def file_save(self):
         dlg = QFileDialog()

@@ -12,7 +12,8 @@ setup(
     install_requires=["PyQt5",
                       "matplotlib",
                       "astropy",
-                      "numpy"],
+                      "numpy",
+                      "goes-solar-retriever"],
     data_files=[('solarannotator', ['cfg/default.json'])],
     entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
 

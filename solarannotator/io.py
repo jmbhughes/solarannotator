@@ -1,5 +1,40 @@
 from astropy.io import fits
 import numpy as np
+from goessolarretriever import Product, Satellite, Retriever
+from collections import namedtuple
+import tempfile
+import os
+from dateutil.parser import parse as parse_date_str
+
+Image = namedtuple('Image', 'data header')
+
+
+class ImageSet:
+    def __init__(self, mapping):
+        self.images = mapping
+
+    @staticmethod
+    def retrieve(date):
+        satellite = Satellite.GOES16
+        products = {94: Product.suvi_l2_ci094,
+                    131: Product.suvi_l2_ci131,
+                    171: Product.suvi_l2_ci171,
+                    195: Product.suvi_l2_ci195,
+                    284: Product.suvi_l2_ci284,
+                    304: Product.suvi_l2_ci304}
+        composites = {}
+        r = Retriever()
+        for wavelength, product in products.items():
+            fn = r.retrieve_nearest(satellite, product, date, tempfile.gettempdir())
+            with fits.open(fn) as hdus:
+                data = hdus[1].data
+                header = hdus[1].header
+                composites[wavelength] = Image(data, header)
+            os.remove(fn)
+        return ImageSet(composites)
+
+    def __getitem__(self, key):
+        return self.images[key]
 
 
 class ThematicMap:
@@ -12,6 +47,7 @@ class ThematicMap:
         """
         self.data = data
         self.metadata = metadata
+        self.date_obs = parse_date_str(self.metadata['DATE-OBS'])
         self.theme_mapping = theme_mapping
 
     @staticmethod
