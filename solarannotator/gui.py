@@ -12,9 +12,9 @@ example) by setting the ``MPLBACKEND`` environment variable to "Qt4Agg" or
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox
+from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, QComboBox
 from PyQt5.QtGui import QIcon
-from datetime import datetime
+from datetime import datetime, timedelta
 from astropy.io import fits
 from matplotlib import path
 
@@ -42,10 +42,10 @@ from .io import ThematicMap, ImageSet
 class AnnotationWidget(QtWidgets.QWidget):
     def __init__(self, config):
         super().__init__()
-        self.composites = None
+        self.composites = ImageSet.create_empty()
         self.current_theme_index = 0
 
-        self.preview_data = np.zeros((1280, 1280))
+        self.preview_data = self.composites['94'].data
         self.thmap_data = np.zeros((1280, 1280))
         self.thmap = ThematicMap(self.thmap_data, {'DATE-OBS': str(datetime.today())}, config.solar_class_name)
 
@@ -110,8 +110,77 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.thmap_data = thmap.data
         self.thmap_axesimage.set_data(self.thmap_data)
         self.composites = ImageSet.retrieve(thmap.date_obs)
-        self.preview_axesimage.set_data(self.composites[195].data)
+        self.preview_axesimage.set_data(self.composites['94'].data)
         self.fig.canvas.draw_idle()
+
+    def updateSingleColorImage(self, channel):
+        self.preview_data = self.composites[channel].data
+        self.preview_axesimage.set_data(self.preview_data)
+        self.fig.canvas.draw_idle()
+
+    def updateThreeColorImage(self, red_channel, green_channel, blue_channel):
+        self.preview_data = np.stack([self.composites[red_channel].data,
+                                     self.composites[green_channel].data,
+                                     self.composites[blue_channel].data], axis=2)
+        self.preview_axesimage.set_data(self.preview_data)
+        self.fig.canvas.draw_idle()
+
+
+class ControlWidget(QtWidgets.QWidget):
+    def __init__(self, annotator):
+        super().__init__()
+        self.annotator = annotator
+
+        layout = QtWidgets.QHBoxLayout()
+        self.tabs = QTabWidget()
+        self.one_color_tab = QWidget()
+        self.three_color_tab = QWidget()
+
+        # Add tabs
+        self.tabs.addTab(self.one_color_tab, "Single")
+        self.tabs.addTab(self.three_color_tab, "Three-color")
+        self.tabs.currentChanged.connect(self.onTabChange)
+
+        # Create single color tab
+        self.one_color_tab.layout = QtWidgets.QHBoxLayout(self)
+        self.single_color_combo_box = QComboBox()
+        self.single_color_combo_box.addItems(self.annotator.composites.channels())
+        self.single_color_combo_box.currentTextChanged.connect(self.onSingleCBChange)
+        self.one_color_tab.setLayout(self.one_color_tab.layout)
+        self.one_color_tab.layout.addWidget(self.single_color_combo_box)
+
+
+        self.three_color_tab.layout = QtWidgets.QVBoxLayout(self)
+        self.red_combo_box = QComboBox()
+        self.red_combo_box.addItems(self.annotator.composites.channels())
+        self.red_combo_box.currentTextChanged.connect(self.onColorCBChange)
+        self.green_combo_box = QComboBox()
+        self.green_combo_box.addItems(self.annotator.composites.channels())
+        self.green_combo_box.currentTextChanged.connect(self.onColorCBChange)
+        self.blue_combo_box = QComboBox()
+        self.blue_combo_box.addItems(self.annotator.composites.channels())
+        self.blue_combo_box.currentTextChanged.connect(self.onColorCBChange)
+        self.three_color_tab.setLayout(self.three_color_tab.layout)
+        self.three_color_tab.layout.addWidget(self.red_combo_box)
+        self.three_color_tab.layout.addWidget(self.green_combo_box)
+        self.three_color_tab.layout.addWidget(self.blue_combo_box)
+
+        layout.addWidget(self.tabs)
+        self.setLayout(layout)
+
+    def onTabChange(self):
+        print("Tab changed")
+        print(self.tabs.currentIndex())
+
+    def onSingleCBChange(self):
+        print(self.single_color_combo_box.currentText())
+        self.annotator.updateSingleColorImage(self.single_color_combo_box.currentText())
+
+    def onColorCBChange(self):
+        red_channel = self.red_combo_box.currentText()
+        green_channel = self.green_combo_box.currentText()
+        blue_channel = self.blue_combo_box.currentText()
+        self.annotator.updateThreeColorImage(red_channel, green_channel, blue_channel)
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -119,6 +188,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.config = Config(config_path)
         self.output_fn = None
+        self.initialized = False
         self.initUI()
 
     def initUI(self):
@@ -136,26 +206,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _setup_control_layout(self):
         self.control_layout = QtWidgets.QHBoxLayout()
-        self._setup_preview_control_panel()
+        c = ControlWidget(self.annotator)
+        self.control_layout.addWidget(c)
         self._setup_theme_radio_buttons()
-
-    def _setup_preview_control_panel(self):
-        # Left control panel
-        self.tabs = QTabWidget()
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
-        self.tabs.resize(300, 200)
-
-        # Add tabs
-        self.tabs.addTab(self.tab1, "Single")
-        self.tabs.addTab(self.tab2, "Three-color")
-
-        # Create first tab
-        self.tab1.layout = QtWidgets.QVBoxLayout(self)
-        self.pushButton1 = QPushButton("PyQt5 button")
-        self.tab1.layout.addWidget(self.pushButton1)
-        self.tab1.setLayout(self.tab1.layout)
-        self.control_layout.addWidget(self.tabs)
 
     def _setup_theme_radio_buttons(self):
         theme_selection_layout = QtWidgets.QVBoxLayout()
@@ -238,15 +291,28 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                      'Thematic map could not open because theme mapping differs from configuration',
                                       QMessageBox.Close)
 
+    def prompt_not_initialized(self):
+        QMessageBox.critical(self,
+                            "Error: Could not save",
+                            "You must create a new thematic map or load one before saving.",
+                            QMessageBox.Close)
+
+
     def file_save(self):
-        if self.output_fn is None:
-            self.file_save_as()
+        if self.initialized:
+            if self.output_fn is None:
+                self.file_save_as()
+            else:
+                self.annotator.thmap.save(self.output_fn)
         else:
-            self.annotator.thmap.save(self.output_fn)
+            self.prompt_not_initialized()
 
     def file_save_as(self):
-        dlg = QFileDialog()
-        fname = dlg.getSaveFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
-        if fname != ('', ''):
-            self.annotator.thmap.save(fname[0])
-            self.output_fn = fname[0]
+        if self.initialized:
+            dlg = QFileDialog()
+            fname = dlg.getSaveFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
+            if fname != ('', ''):
+                self.annotator.thmap.save(fname[0])
+                self.output_fn = fname[0]
+        else:
+            self.prompt_not_initialized()

@@ -16,12 +16,12 @@ class ImageSet:
     @staticmethod
     def retrieve(date):
         satellite = Satellite.GOES16
-        products = {94: Product.suvi_l2_ci094,
-                    131: Product.suvi_l2_ci131,
-                    171: Product.suvi_l2_ci171,
-                    195: Product.suvi_l2_ci195,
-                    284: Product.suvi_l2_ci284,
-                    304: Product.suvi_l2_ci304}
+        products = {"94": Product.suvi_l2_ci094,
+                    "131": Product.suvi_l2_ci131,
+                    "171": Product.suvi_l2_ci171,
+                    "195": Product.suvi_l2_ci195,
+                    "284": Product.suvi_l2_ci284,
+                    "304": Product.suvi_l2_ci304}
         composites = {}
         r = Retriever()
         for wavelength, product in products.items():
@@ -33,9 +33,21 @@ class ImageSet:
             os.remove(fn)
         return ImageSet(composites)
 
+    @staticmethod
+    def create_empty():
+        mapping = {"94": np.zeros((1280, 1280)),
+                   '131': np.zeros((1280, 1280)),
+                   '171': np.zeros((1280, 1280)),
+                   '195': np.zeros((1280, 1280)),
+                   '284': np.zeros((1280, 1280)),
+                   '304': np.zeros((1280, 1280))}
+        return ImageSet(mapping)
+
     def __getitem__(self, key):
         return self.images[key]
 
+    def channels(self):
+        return list(self.images.keys())
 
 class ThematicMap:
     def __init__(self, data, metadata, theme_mapping):
