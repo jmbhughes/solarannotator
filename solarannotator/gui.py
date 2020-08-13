@@ -14,7 +14,7 @@ import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox
 from PyQt5.QtGui import QIcon
-
+from datetime import datetime
 from astropy.io import fits
 from matplotlib import path
 
@@ -42,12 +42,12 @@ from .io import ThematicMap, ImageSet
 class AnnotationWidget(QtWidgets.QWidget):
     def __init__(self, config):
         super().__init__()
-        self.thmap = None
         self.composites = None
         self.current_theme_index = 0
 
         self.preview_data = np.zeros((1280, 1280))
         self.thmap_data = np.zeros((1280, 1280))
+        self.thmap = ThematicMap(self.thmap_data, {'DATE-OBS': str(datetime.today())}, config.solar_class_name)
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -61,6 +61,8 @@ class AnnotationWidget(QtWidgets.QWidget):
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
         self.axs[1].set_axis_off()
+        self.axs[0].set_title("Preview")
+        self.axs[1].set_title("Thematic Map")
 
         toolbar = NavigationToolbar(static_canvas, self)
         layout.addWidget(toolbar)
@@ -88,6 +90,7 @@ class AnnotationWidget(QtWidgets.QWidget):
                                                 self.current_theme_index)
         self.thmap_axesimage.set_data(self.thmap_data)
         self.fig.canvas.draw_idle()
+        self.thmap.data = self.thmap_data
 
     def updateArray(self, array, indices, value):
         """
@@ -111,11 +114,11 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.fig.canvas.draw_idle()
 
 
-
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self, config_path):
         super().__init__()
         self.config = Config(config_path)
+        self.output_fn = None
         self.initUI()
 
     def initUI(self):
@@ -133,25 +136,28 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _setup_control_layout(self):
         self.control_layout = QtWidgets.QHBoxLayout()
-        # Initialize tab screen
+        self._setup_preview_control_panel()
+        self._setup_theme_radio_buttons()
+
+    def _setup_preview_control_panel(self):
+        # Left control panel
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
         self.tabs.resize(300, 200)
 
         # Add tabs
-        self.tabs.addTab(self.tab1, "Tab 1")
-        self.tabs.addTab(self.tab2, "Tab 2")
+        self.tabs.addTab(self.tab1, "Single")
+        self.tabs.addTab(self.tab2, "Three-color")
 
         # Create first tab
         self.tab1.layout = QtWidgets.QVBoxLayout(self)
         self.pushButton1 = QPushButton("PyQt5 button")
         self.tab1.layout.addWidget(self.pushButton1)
         self.tab1.setLayout(self.tab1.layout)
-
-        # Add tabs to widget
         self.control_layout.addWidget(self.tabs)
 
+    def _setup_theme_radio_buttons(self):
         theme_selection_layout = QtWidgets.QVBoxLayout()
         radiobuttons = dict()
 
@@ -178,7 +184,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def _setup_menubar(self):
         self.mainMenu = self.menuBar()
         self.fileMenu = self.mainMenu.addMenu('File')
-        self.editMenu = self.mainMenu.addMenu("Edit")
 
         # File Menu
         newButton = QAction("New", self)
@@ -193,11 +198,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         openFile.triggered.connect(self.file_open)
         self.fileMenu.addAction(openFile)
 
-        saveFile = QAction("&Save File", self)
+        saveFile = QAction("&Save", self)
         saveFile.setShortcut("Ctrl+S")
         saveFile.setStatusTip('Save File')
         saveFile.triggered.connect(self.file_save)
         self.fileMenu.addAction(saveFile)
+        self.fileMenu.addSeparator()
+
+        saveAsFile = QAction("&Save As...", self)
+        saveAsFile.setStatusTip('Save As...')
+        saveAsFile.triggered.connect(self.file_save_as)
+        self.fileMenu.addAction(saveAsFile)
+        self.fileMenu.addSeparator()
 
         exitButton = QAction('Exit', self)
         exitButton.setShortcut('Ctrl+Q')
@@ -205,12 +217,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         exitButton.triggered.connect(self.close)
         self.fileMenu.addAction(exitButton)
 
-        # Edit Menu
-        undoEdit = QAction("&Undo Edit", self)
-        undoEdit.setShortcut("Ctrl+Z")
-        undoEdit.setStatusTip('Undo a change on the thematic map')
-        undoEdit.triggered.connect(lambda: print("Attempting to undo an edit"))  # TODO: implement undo edit
-        self.editMenu.addAction(undoEdit)
+        # # Edit Menu
+        # self.editMenu = self.mainMenu.addMenu("Edit")
+        # undoEdit = QAction("&Undo Edit", self)
+        # undoEdit.setShortcut("Ctrl+Z")
+        # undoEdit.setStatusTip('Undo a change on the thematic map')
+        # undoEdit.triggered.connect(lambda: print("Attempting to undo an edit"))  # TODO: implement undo edit
+        # self.editMenu.addAction(undoEdit)
 
     def file_open(self):
         dlg = QFileDialog()
@@ -225,10 +238,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                      'Thematic map could not open because theme mapping differs from configuration',
                                       QMessageBox.Close)
 
-
     def file_save(self):
+        if self.output_fn is None:
+            self.file_save_as()
+        else:
+            self.annotator.thmap.save(self.output_fn)
+
+    def file_save_as(self):
         dlg = QFileDialog()
         fname = dlg.getSaveFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
         if fname != ('', ''):
-           pass # TODO : actually save a thematic map
-
+            self.annotator.thmap.save(fname[0])
+            self.output_fn = fname[0]
