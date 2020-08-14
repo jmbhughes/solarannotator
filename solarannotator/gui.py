@@ -1,26 +1,19 @@
-"""
-===============
-Embedding in Qt
-===============
-
-Simple Qt application embedding Matplotlib canvases.  This program will work
-equally well using Qt4 and Qt5.  Either version of Qt can be selected (for
-example) by setting the ``MPLBACKEND`` environment variable to "Qt4Agg" or
-"Qt5Agg", or by first importing the desired version of PyQt.
-"""
-
+import tempfile
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, QComboBox
+from PyQt5.QtCore import QDateTime
 from PyQt5.QtGui import QIcon
 from datetime import datetime, timedelta
 from astropy.io import fits
 from matplotlib import path
 
 import numpy as np
+import os
 from matplotlib.widgets import LassoSelector
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
+
 if is_pyqt5():  # TODO: update to use the non-deprecated approach
     from matplotlib.backends.backend_qt5agg import (
         FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
@@ -141,46 +134,102 @@ class ControlWidget(QtWidgets.QWidget):
         self.tabs.addTab(self.three_color_tab, "Three-color")
         self.tabs.currentChanged.connect(self.onTabChange)
 
-        # Create single color tab
-        self.one_color_tab.layout = QtWidgets.QHBoxLayout(self)
-        self.single_color_combo_box = QComboBox()
-        self.single_color_combo_box.addItems(self.annotator.composites.channels())
-        self.single_color_combo_box.currentTextChanged.connect(self.onSingleCBChange)
-        self.one_color_tab.setLayout(self.one_color_tab.layout)
-        self.one_color_tab.layout.addWidget(self.single_color_combo_box)
-
-
-        self.three_color_tab.layout = QtWidgets.QVBoxLayout(self)
-        self.red_combo_box = QComboBox()
-        self.red_combo_box.addItems(self.annotator.composites.channels())
-        self.red_combo_box.currentTextChanged.connect(self.onColorCBChange)
-        self.green_combo_box = QComboBox()
-        self.green_combo_box.addItems(self.annotator.composites.channels())
-        self.green_combo_box.currentTextChanged.connect(self.onColorCBChange)
-        self.blue_combo_box = QComboBox()
-        self.blue_combo_box.addItems(self.annotator.composites.channels())
-        self.blue_combo_box.currentTextChanged.connect(self.onColorCBChange)
-        self.three_color_tab.setLayout(self.three_color_tab.layout)
-        self.three_color_tab.layout.addWidget(self.red_combo_box)
-        self.three_color_tab.layout.addWidget(self.green_combo_box)
-        self.three_color_tab.layout.addWidget(self.blue_combo_box)
+        self.initSingleColorUI()
+        self.initThreeColorUI()
 
         layout.addWidget(self.tabs)
         self.setLayout(layout)
 
-    def onTabChange(self):
-        print("Tab changed")
-        print(self.tabs.currentIndex())
+    def initSingleColorUI(self):
+        # Create single color tab
+        self.one_color_tab.layout = QtWidgets.QHBoxLayout(self)
+        self.single_color_label = QLabel()
+        self.single_color_label.setText("Channel")
+        self.one_color_tab.layout.addWidget(self.single_color_label)
+        self.single_color_combo_box = QComboBox()
+        self.single_color_combo_box.addItems(self.annotator.composites.channels())
+        self.single_color_combo_box.currentTextChanged.connect(self.onSingleColorChange)
+        self.one_color_tab.setLayout(self.one_color_tab.layout)
+        self.one_color_tab.layout.addWidget(self.single_color_combo_box)
 
-    def onSingleCBChange(self):
-        print(self.single_color_combo_box.currentText())
+    def initThreeColorUI(self):
+        self.three_color_tab.layout = QtWidgets.QVBoxLayout(self)
+
+        self.red_layout = QtWidgets.QHBoxLayout()
+        self.red_label = QLabel()
+        self.red_label.setText("Red Channel")
+        self.red_combo_box = QComboBox()
+        self.red_combo_box.addItems(self.annotator.composites.channels())
+        self.red_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.red_layout.addWidget(self.red_label)
+        self.red_layout.addWidget(self.red_combo_box)
+
+        self.green_layout = QtWidgets.QHBoxLayout()
+        self.green_label = QLabel()
+        self.green_label.setText("Green Channel")
+        self.green_combo_box = QComboBox()
+        self.green_combo_box.addItems(self.annotator.composites.channels())
+        self.green_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.green_layout.addWidget(self.green_label)
+        self.green_layout.addWidget(self.green_combo_box)
+
+        self.blue_layout = QtWidgets.QHBoxLayout()
+        self.blue_label = QLabel()
+        self.blue_label.setText("Blue Channel")
+        self.blue_combo_box = QComboBox()
+        self.blue_combo_box.addItems(self.annotator.composites.channels())
+        self.blue_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.blue_layout.addWidget(self.blue_label)
+        self.blue_layout.addWidget(self.blue_combo_box)
+
+        self.three_color_tab.setLayout(self.three_color_tab.layout)
+        self.three_color_tab.layout.addLayout(self.red_layout)
+        self.three_color_tab.layout.addLayout(self.green_layout)
+        self.three_color_tab.layout.addLayout(self.blue_layout)
+
+    def onTabChange(self):
+        if self.tabs.currentIndex() == 0:
+            self.onSingleColorChange()
+        elif self.tabs.currentIndex() == 1:
+            self.onThreeColorChange()
+
+    def onSingleColorChange(self):
         self.annotator.updateSingleColorImage(self.single_color_combo_box.currentText())
 
-    def onColorCBChange(self):
+    def onThreeColorChange(self):
         red_channel = self.red_combo_box.currentText()
         green_channel = self.green_combo_box.currentText()
         blue_channel = self.blue_combo_box.currentText()
         self.annotator.updateThreeColorImage(red_channel, green_channel, blue_channel)
+
+
+class NewFilePopup(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.initUI()
+
+    def initUI(self):
+        layout = QtWidgets.QHBoxLayout()
+        instructions = QLabel("Please select a time for the new file.", self)
+        self.dateEdit = QtWidgets.QDateTimeEdit(QDateTime.currentDateTime())
+        submit_button = QPushButton("Submit")
+        layout.addWidget(instructions)
+        layout.addWidget(self.dateEdit)
+        layout.addWidget(submit_button)
+        self.setLayout(layout)
+        submit_button.clicked.connect(self.onSubmit)
+
+    def onSubmit(self):
+        # set the date in the application and close
+        self.parent.date = self.dateEdit.dateTime().toPyDateTime()
+        new_thmap = ThematicMap(np.zeros((1280, 1280)),
+                                {'DATE-OBS': str(self.parent.date),
+                                 'DATE': str(datetime.today())},
+                                self.parent.config.solar_class_name)
+        self.parent.annotator.loadThematicMap(new_thmap)
+        self.parent.controls.onTabChange()  # Us
+        self.close()
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -206,8 +255,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _setup_control_layout(self):
         self.control_layout = QtWidgets.QHBoxLayout()
-        c = ControlWidget(self.annotator)
-        self.control_layout.addWidget(c)
+        self.controls = ControlWidget(self.annotator)
+        self.control_layout.addWidget(self.controls)
         self._setup_theme_radio_buttons()
 
     def _setup_theme_radio_buttons(self):
@@ -242,7 +291,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         newButton = QAction("New", self)
         newButton.setShortcut('Ctrl+N')
         newButton.setStatusTip('Create new thematic map')
-        newButton.triggered.connect(lambda: print("New clicked"))
+        newButton.triggered.connect(self.new_file)
         self.fileMenu.addAction(newButton)
 
         openFile = QAction("&Open File", self)
@@ -267,7 +316,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         exitButton = QAction('Exit', self)
         exitButton.setShortcut('Ctrl+Q')
         exitButton.setStatusTip('Exit application')
-        exitButton.triggered.connect(self.close)
+        exitButton.triggered.connect(sys.exit)
         self.fileMenu.addAction(exitButton)
 
         # # Edit Menu
@@ -278,6 +327,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # undoEdit.triggered.connect(lambda: print("Attempting to undo an edit"))  # TODO: implement undo edit
         # self.editMenu.addAction(undoEdit)
 
+    def new_file(self):
+        self.new_file_popup = NewFilePopup(self)
+        self.new_file_popup.setGeometry(100, 200, 100, 100)
+        self.new_file_popup.show()
+        print("test")
+
     def file_open(self):
         dlg = QFileDialog()
         fname = dlg.getOpenFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
@@ -285,6 +340,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             thmap = ThematicMap.load(fname[0])
             if thmap.complies_with_mapping(self.config.solar_class_name):
                 self.annotator.loadThematicMap(thmap)
+                self.controls.onTabChange()  # Use the tab change to automatically load the right image
             else:
                 QMessageBox.critical(self,
                                      'Error: Could not open',
