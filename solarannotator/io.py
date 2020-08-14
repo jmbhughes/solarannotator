@@ -35,12 +35,12 @@ class ImageSet:
 
     @staticmethod
     def create_empty():
-        mapping = {"94": np.zeros((1280, 1280)),
-                   '131': np.zeros((1280, 1280)),
-                   '171': np.zeros((1280, 1280)),
-                   '195': np.zeros((1280, 1280)),
-                   '284': np.zeros((1280, 1280)),
-                   '304': np.zeros((1280, 1280))}
+        mapping = {"94": Image(np.zeros((1280, 1280)), {}),
+                   '131': Image(np.zeros((1280, 1280)), {}),
+                   '171': Image(np.zeros((1280, 1280)), {}),
+                   '195': Image(np.zeros((1280, 1280)), {}),
+                   '284': Image(np.zeros((1280, 1280)), {}),
+                   '304': Image(np.zeros((1280, 1280)), {})}
         return ImageSet(mapping)
 
     def __getitem__(self, key):

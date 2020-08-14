@@ -2,9 +2,10 @@ import tempfile
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, QComboBox
+from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, \
+    QComboBox, QLineEdit
 from PyQt5.QtCore import QDateTime
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
 from astropy.io import fits
 from matplotlib import path
@@ -38,7 +39,8 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.composites = ImageSet.create_empty()
         self.current_theme_index = 0
 
-        self.preview_data = self.composites['94'].data
+        self.preview_data = self.composites['94'].data.copy()
+        print(type(self.preview_data))
         self.thmap_data = np.zeros((1280, 1280))
         self.thmap = ThematicMap(self.thmap_data, {'DATE-OBS': str(datetime.today())}, config.solar_class_name)
 
@@ -49,7 +51,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         layout.addWidget(static_canvas)
 
         self.axs = static_canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
-        self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=5, cmap='gray')
+        self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=1, cmap='gray')
         self.thmap_axesimage = self.axs[1].imshow(self.thmap_data,
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
@@ -106,15 +108,43 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.preview_axesimage.set_data(self.composites['94'].data)
         self.fig.canvas.draw_idle()
 
-    def updateSingleColorImage(self, channel):
-        self.preview_data = self.composites[channel].data
+    def updateSingleColorImage(self, channel, lower_percentile, upper_percentile):
+        self.preview_data = self.composites[channel].data.copy()
+        lower = np.nanpercentile(self.preview_data, lower_percentile)
+        upper = np.nanpercentile(self.preview_data, upper_percentile)
+        self.preview_data[self.preview_data < lower] = lower
+        self.preview_data[self.preview_data > upper] = upper
+        self.preview_data /= np.nanmax(self.preview_data)
         self.preview_axesimage.set_data(self.preview_data)
         self.fig.canvas.draw_idle()
 
-    def updateThreeColorImage(self, red_channel, green_channel, blue_channel):
-        self.preview_data = np.stack([self.composites[red_channel].data,
-                                     self.composites[green_channel].data,
-                                     self.composites[blue_channel].data], axis=2)
+    def updateThreeColorImage(self, red_channel, green_channel, blue_channel,
+                              red_min, green_min, blue_min,
+                              red_max, green_max, blue_max,
+                              red_scale, green_scale, blue_scale):
+        self.preview_data = np.stack([self.composites[red_channel].data.copy(),
+                                     self.composites[green_channel].data.copy(),
+                                     self.composites[blue_channel].data.copy()], axis=2)
+        # self.preview_data[:, :, 0] = np.power(self.preview_data[:, :, 0], red_scale)
+        # self.preview_data[:, :, 1] = np.power(self.preview_data[:, :, 1], green_scale)
+        # self.preview_data[:, :, 2] = np.power(self.preview_data[:, :, 2], blue_scale)
+        #
+        # red_lower = np.nanpercentile(self.preview_data[:, :, 0], red_min)
+        # green_lower = np.nanpercentile(self.preview_data[:, :, 0], green_min)
+        # blue_lower = np.nanpercentile(self.preview_data[:, :, 0], blue_min)
+        # red_upper = np.nanpercentile(self.preview_data[:, :, 0], red_max)
+        # green_upper = np.nanpercentile(self.preview_data[:, :, 0], green_max)
+        # blue_upper = np.nanpercentile(self.preview_data[:, :, 0], blue_max)
+        # self.preview_data[np.where(self.preview_data[:, :, 0]) < red_lower] = red_lower
+        # self.preview_data[np.where(self.preview_data[:, :, 0]) > red_upper] = red_upper
+        # self.preview_data[np.where(self.preview_data[:, :, 1]) < green_lower] = green_lower
+        # self.preview_data[np.where(self.preview_data[:, :, 1]) > green_upper] = green_upper
+        # self.preview_data[np.where(self.preview_data[:, :, 2]) < blue_lower] = blue_lower
+        # self.preview_data[np.where(self.preview_data[:, :, 2]) > blue_upper] = blue_upper
+        #
+        # for index in [0, 1, 2]:
+        #     self.preview_data[:, :, index] /= np.nanmax(self.preview_data[:, :, index])
+
         self.preview_axesimage.set_data(self.preview_data)
         self.fig.canvas.draw_idle()
 
@@ -142,47 +172,134 @@ class ControlWidget(QtWidgets.QWidget):
 
     def initSingleColorUI(self):
         # Create single color tab
-        self.one_color_tab.layout = QtWidgets.QHBoxLayout(self)
+        self.one_color_tab.layout = QtWidgets.QGridLayout(self)
+
         self.single_color_label = QLabel()
         self.single_color_label.setText("Channel")
         self.one_color_tab.layout.addWidget(self.single_color_label)
         self.single_color_combo_box = QComboBox()
         self.single_color_combo_box.addItems(self.annotator.composites.channels())
         self.single_color_combo_box.currentTextChanged.connect(self.onSingleColorChange)
+
+        self.one_color_min_editor = QLineEdit()
+        self.one_color_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.one_color_min_editor.setText("0.0")
+        self.one_color_min_editor.textEdited.connect(self.onSingleColorChange)
+
+        self.one_color_max_editor = QLineEdit()
+        self.one_color_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.one_color_max_editor.setText("100.0")
+        self.one_color_max_editor.textEdited.connect(self.onSingleColorChange)
+
+        channel_label = QLabel("Channel", self)
+        min_label = QLabel("Min", self)
+        max_label = QLabel("Max", self)
+
         self.one_color_tab.setLayout(self.one_color_tab.layout)
-        self.one_color_tab.layout.addWidget(self.single_color_combo_box)
+        self.one_color_tab.layout.addWidget(QLabel(), 0, 0)
+        self.one_color_tab.layout.addWidget(channel_label, 1, 1)
+        self.one_color_tab.layout.addWidget(min_label, 1, 2)
+        self.one_color_tab.layout.addWidget(max_label, 1, 3)
+        self.one_color_tab.layout.addWidget(self.single_color_label, 2, 0)
+        self.one_color_tab.layout.addWidget(self.single_color_combo_box, 2, 1)
+        self.one_color_tab.layout.addWidget(self.one_color_min_editor, 2, 2)
+        self.one_color_tab.layout.addWidget(self.one_color_max_editor, 2, 3)
+
 
     def initThreeColorUI(self):
         self.three_color_tab.layout = QtWidgets.QVBoxLayout(self)
+        header_layout = QtWidgets.QHBoxLayout()
+        header_layout.addWidget(QLabel())
+        channel_label = QLabel("Channel")
+        channel_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        header_layout.addWidget(channel_label)
+        min_label = QLabel("Min")
+        min_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        header_layout.addWidget(min_label)
+        max_label = QLabel("Max")
+        max_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        header_layout.addWidget(max_label)
+        scale_label = QLabel("Scale")
+        scale_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        header_layout.addWidget(scale_label)
 
         self.red_layout = QtWidgets.QHBoxLayout()
         self.red_label = QLabel()
         self.red_label.setText("Red Channel")
+        self.red_label.setAlignment(QtCore.Qt.AlignRight)
         self.red_combo_box = QComboBox()
         self.red_combo_box.addItems(self.annotator.composites.channels())
         self.red_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.red_min_editor = QLineEdit()
+        self.red_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.red_min_editor.setText("0.0")
+        self.red_min_editor.textEdited.connect(self.onThreeColorChange)
+        self.red_max_editor = QLineEdit()
+        self.red_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.red_max_editor.setText("100.0")
+        self.red_max_editor.textEdited.connect(self.onThreeColorChange)
+        self.red_scale_editor = QLineEdit()
+        self.red_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.red_scale_editor.setText("1.0")
+        self.red_scale_editor.textEdited.connect(self.onThreeColorChange)
         self.red_layout.addWidget(self.red_label)
         self.red_layout.addWidget(self.red_combo_box)
+        self.red_layout.addWidget(self.red_min_editor)
+        self.red_layout.addWidget(self.red_max_editor)
+        self.red_layout.addWidget(self.red_scale_editor)
 
         self.green_layout = QtWidgets.QHBoxLayout()
         self.green_label = QLabel()
         self.green_label.setText("Green Channel")
+        self.green_label.setAlignment(QtCore.Qt.AlignRight)
         self.green_combo_box = QComboBox()
         self.green_combo_box.addItems(self.annotator.composites.channels())
         self.green_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.green_min_editor = QLineEdit()
+        self.green_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.green_min_editor.setText("0.0")
+        self.green_min_editor.textEdited.connect(self.onThreeColorChange)
+        self.green_max_editor = QLineEdit()
+        self.green_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.green_max_editor.setText("100.0")
+        self.green_max_editor.textEdited.connect(self.onThreeColorChange)
+        self.green_scale_editor = QLineEdit()
+        self.green_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.green_scale_editor.setText("1.0")
+        self.green_scale_editor.textEdited.connect(self.onThreeColorChange)
         self.green_layout.addWidget(self.green_label)
         self.green_layout.addWidget(self.green_combo_box)
+        self.green_layout.addWidget(self.green_min_editor)
+        self.green_layout.addWidget(self.green_max_editor)
+        self.green_layout.addWidget(self.green_scale_editor)
 
         self.blue_layout = QtWidgets.QHBoxLayout()
         self.blue_label = QLabel()
         self.blue_label.setText("Blue Channel")
+        self.blue_label.setAlignment(QtCore.Qt.AlignRight)
         self.blue_combo_box = QComboBox()
         self.blue_combo_box.addItems(self.annotator.composites.channels())
         self.blue_combo_box.currentTextChanged.connect(self.onThreeColorChange)
+        self.blue_min_editor = QLineEdit()
+        self.blue_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.blue_min_editor.setText("0.0")
+        self.blue_min_editor.textEdited.connect(self.onThreeColorChange)
+        self.blue_max_editor = QLineEdit()
+        self.blue_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.blue_max_editor.setText("100.0")
+        self.blue_max_editor.textEdited.connect(self.onThreeColorChange)
+        self.blue_scale_editor = QLineEdit()
+        self.blue_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.blue_scale_editor.setText("1.0")
+        self.blue_scale_editor.textEdited.connect(self.onThreeColorChange)
         self.blue_layout.addWidget(self.blue_label)
         self.blue_layout.addWidget(self.blue_combo_box)
+        self.blue_layout.addWidget(self.blue_min_editor)
+        self.blue_layout.addWidget(self.blue_max_editor)
+        self.blue_layout.addWidget(self.blue_scale_editor)
 
         self.three_color_tab.setLayout(self.three_color_tab.layout)
+        self.three_color_tab.layout.addLayout(header_layout)
         self.three_color_tab.layout.addLayout(self.red_layout)
         self.three_color_tab.layout.addLayout(self.green_layout)
         self.three_color_tab.layout.addLayout(self.blue_layout)
@@ -194,13 +311,24 @@ class ControlWidget(QtWidgets.QWidget):
             self.onThreeColorChange()
 
     def onSingleColorChange(self):
-        self.annotator.updateSingleColorImage(self.single_color_combo_box.currentText())
+        self.annotator.updateSingleColorImage(self.single_color_combo_box.currentText(),
+                                              float(self.one_color_min_editor.text()),
+                                              float(self.one_color_max_editor.text()))
 
     def onThreeColorChange(self):
         red_channel = self.red_combo_box.currentText()
         green_channel = self.green_combo_box.currentText()
         blue_channel = self.blue_combo_box.currentText()
-        self.annotator.updateThreeColorImage(red_channel, green_channel, blue_channel)
+        self.annotator.updateThreeColorImage(red_channel, green_channel, blue_channel,
+                                             float(self.red_min_editor.text()),
+                                             float(self.green_min_editor.text()),
+                                             float(self.blue_min_editor.text()),
+                                             float(self.red_max_editor.text()),
+                                             float(self.green_max_editor.text()),
+                                             float(self.blue_max_editor.text()),
+                                             float(self.red_scale_editor.text()),
+                                             float(self.green_scale_editor.text()),
+                                             float(self.blue_scale_editor.text()))
 
 
 class NewFilePopup(QWidget):
@@ -352,7 +480,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                             "Error: Could not save",
                             "You must create a new thematic map or load one before saving.",
                             QMessageBox.Close)
-
 
     def file_save(self):
         if self.initialized:
