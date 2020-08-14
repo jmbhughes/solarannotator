@@ -1,4 +1,6 @@
 # Solar Annotator
+[![CodeFactor](https://www.codefactor.io/repository/github/jmbhughes/solarannotator/badge)](https://www.codefactor.io/repository/github/jmbhughes/solarannotator)
+[![PyPI version](https://badge.fury.io/py/solarannotator.svg)](https://badge.fury.io/py/solarannotator)
 
 A tool for annotating solar images with themes. 
 
