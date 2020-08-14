@@ -6,7 +6,7 @@ A tool for annotating solar images with themes.
 ```pip install solarannotator```
 
 ## Running and uasage
-Execute from the terminal after installing:
+Execute from the terminal after installing by running 
 ```SolarAnnotator```
 
 This launches the main software:
@@ -16,6 +16,9 @@ On the left hand side, you will see a preview that can be maniuplated with the c
 It allows for viewing different SUVI channels with different configurations, e.g. one color versus three color. 
 When you wish to annotate, simply draw on top of this window after selecting the 
 desired theme radio button. 
+
+The preview controls allow you to select the minimum and maximum percentile shown as well as scale
+the image by raising all pixels to the selected power.
 
 ## Future
 This tool is still under development. There are many features coming. 
@@ -29,4 +32,3 @@ This tool is still under development. There are many features coming.
 - [x] Differentiate save and save as
 - [ ] Add color legend to radio buttons
 - [ ] Robustify the thematic map io for better metadata passing
-- [ ] 
