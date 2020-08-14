@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='solarannotator',
-    version='0.1',
+    version='0.2',
     packages=['solarannotator'],
     url='',
     license='',
