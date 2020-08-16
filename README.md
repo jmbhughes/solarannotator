@@ -26,8 +26,8 @@ the image by raising all pixels to the selected power.
 This tool is still under development. There are many features coming. 
 - [ ] Ability to scale a single color image
 - [x] Ability to scale in a three color image   
-- [ ] Right click on a region in the thematic map and see its boundary in the preview
-- [ ] Left click on a region in the thematic map to re-annotate all the contiguous pixels
+- [x] Right click on a region in the thematic map and see its boundary in the preview
+- [x] Left click on a region in the thematic map to re-annotate all the contiguous pixels
 - [ ] Undo and redo annotations
 - [ ] Overlay HEK and other pre-determined annotations
 - [ ] Multiple normalization options
