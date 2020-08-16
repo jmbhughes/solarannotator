@@ -16,19 +16,20 @@ This launches the main software:
 
 On the left hand side, you will see a preview that can be maniuplated with the controls below. 
 It allows for viewing different SUVI channels with different configurations, e.g. one color versus three color. 
-When you wish to annotate, simply draw on top of this window after selecting the 
-desired theme radio button. 
-
 The preview controls allow you to select the minimum and maximum percentile shown as well as scale
 the image by raising all pixels to the selected power.
 
+You interact by drawing on the preview image to create new regions in the thematic map. You can also
+relabel those patches by left-clicking in the thematic map with a new theme selected. Finally, you can see
+boundaries of regions from the thematic map back in the preview image by right clicking the thematic map. 
+
 ## Future
 This tool is still under development. There are many features coming. 
-- [ ] Ability to scale a single color image
+- [x] Ability to scale a single color image
 - [x] Ability to scale in a three color image   
 - [x] Right click on a region in the thematic map and see its boundary in the preview
 - [x] Left click on a region in the thematic map to re-annotate all the contiguous pixels
-- [ ] Undo annotations
+- [x] Undo annotations
 - [ ] Redo annotations
 - [ ] Overlay HEK and other pre-determined annotations
 - [ ] Multiple normalization options
