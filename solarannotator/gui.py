@@ -47,7 +47,7 @@ class AnnotationWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QVBoxLayout()
 
-        self.fig = Figure(figsize=(10, 5))
+        self.fig = Figure(figsize=(15, 10))
         canvas = FigureCanvas(self.fig)
         canvas.mpl_connect('button_press_event', self.onclick)
 
@@ -215,6 +215,10 @@ class AnnotationWidget(QtWidgets.QWidget):
 
     def loadThematicMap(self, thmap):
         try:
+            download_message = QMessageBox.information(self,
+                                                       'Downloading',
+                                                       "Downloads may take a few moments. Click 'ok' to proceed.",
+                                                       QMessageBox.Ok)
             self.composites = ImageSet.retrieve(thmap.date_obs)
         except RuntimeError:
             self.data_does_not_exist_popup()
@@ -539,6 +543,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             radiobuttons[theme] = QRadioButton(theme)
             radiobuttons[theme].index = index
             radiobuttons[theme].toggled.connect(self.onClickedRadioButton)
+            color_string = self.config.solar_colors[theme]
+            radiobuttons[theme].setStyleSheet("QRadioButton"
+                                       "{"
+                                       "background-color : " + color_string + ""
+                                       "}")
+
             theme_selection_layout.addWidget(radiobuttons[theme])
         self.control_layout.addLayout(theme_selection_layout)
 
