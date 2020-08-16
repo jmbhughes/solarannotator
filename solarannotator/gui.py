@@ -1,10 +1,11 @@
 import tempfile
+import time
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, \
-    QComboBox, QLineEdit
-from PyQt5.QtCore import QDateTime
+    QComboBox, QLineEdit, QProgressBar, QVBoxLayout
+from PyQt5.QtCore import QDateTime, QThread, pyqtSignal, QObject, pyqtSlot
 from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
 from astropy.io import fits
