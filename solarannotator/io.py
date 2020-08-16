@@ -49,6 +49,7 @@ class ImageSet:
     def channels(self):
         return list(self.images.keys())
 
+
 class ThematicMap:
     def __init__(self, data, metadata, theme_mapping):
         """

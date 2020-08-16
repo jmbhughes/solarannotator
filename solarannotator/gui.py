@@ -47,6 +47,8 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.thmap_data = np.zeros((1280, 1280))
         self.thmap = ThematicMap(self.thmap_data, {'DATE-OBS': str(datetime.today())}, config.solar_class_name)
 
+        self.history = []
+
         layout = QtWidgets.QVBoxLayout()
 
         self.fig = Figure(figsize=(10, 5))
@@ -86,6 +88,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         """
         p = path.Path(verts)
         ind = p.contains_points(self.pix, radius=1)
+        self.history.append(self.thmap_data.copy())
         self.thmap_data = self.updateArray(self.thmap_data,
                                                 ind,
                                                 self.current_theme_index)
@@ -96,6 +99,7 @@ class AnnotationWidget(QtWidgets.QWidget):
     def rename_region(self, event):
         # draw patches
         y, x = int(event.xdata), int(event.ydata)
+        self.history.append(self.thmap_data.copy())
         label = self.thmap_data[x, y]
         contiguous_regions = scipy.ndimage.label(self.thmap_data == label)[0]
         this_region = contiguous_regions == (contiguous_regions[x, y])
@@ -174,6 +178,15 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.axs[0].add_collection(self.region_patches[-1])
         self.fig.canvas.draw_idle()
 
+    def undo_action(self):
+        """ when undo is clicked, revert the thematic map to the previous state"""
+        if len(self.history) > 1:
+            old = self.history.pop(-1)
+            self.thmap_data = old
+            self.thmap.data = self.thmap_data
+            self.thmap_axesimage.set_data(old)
+            self.fig.canvas.draw_idle()
+
     def onclick(self, event):
         """
         Draw contours on the data for a click in the thematic map
@@ -205,15 +218,21 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.fig.canvas.draw_idle()
 
     def loadThematicMap(self, thmap):
-        self.thmap = thmap
-        self.thmap_data = thmap.data
-        self.thmap_axesimage.set_data(self.thmap_data)
-        self.composites = ImageSet.retrieve(thmap.date_obs)
-        self.preview_axesimage.set_data(self.composites['94'].data)
-        self.fig.canvas.draw_idle()
+        try:
+            self.composites = ImageSet.retrieve(thmap.date_obs)
+        except RuntimeError:
+            self.data_does_not_exist_popup()
+        else:
+            self.thmap = thmap
+            self.history = [thmap.data.copy()]
+            self.thmap_data = thmap.data
+            self.thmap_axesimage.set_data(self.thmap_data)
+            self.preview_axesimage.set_data(self.composites['94'].data)
+            self.fig.canvas.draw_idle()
 
-    def updateSingleColorImage(self, channel, lower_percentile, upper_percentile):
+    def updateSingleColorImage(self, channel, lower_percentile, upper_percentile, scale):
         self.preview_data = self.composites[channel].data.copy()
+        self.preview_data = np.power(np.abs(self.preview_data), scale) * np.sign(self.preview_data)
         lower = np.nanpercentile(self.preview_data, lower_percentile)
         upper = np.nanpercentile(self.preview_data, upper_percentile)
         self.preview_data[self.preview_data < lower] = lower
@@ -253,6 +272,12 @@ class AnnotationWidget(QtWidgets.QWidget):
 
         self.preview_axesimage.set_data(self.preview_data)
         self.fig.canvas.draw_idle()
+
+    def data_does_not_exist_popup(self):
+        QMessageBox.critical(self,
+                             'Error: Could not open',
+                             'Composite data does not exist for that date.',
+                             QMessageBox.Close)
 
 
 class ControlWidget(QtWidgets.QWidget):
@@ -297,22 +322,31 @@ class ControlWidget(QtWidgets.QWidget):
         self.one_color_max_editor.setText("99.9")
         self.one_color_max_editor.editingFinished.connect(self.onSingleColorChange)
 
+        self.one_color_scale_editor = QLineEdit()
+        self.one_color_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.one_color_scale_editor.setText("0.25")
+        self.one_color_scale_editor.editingFinished.connect(self.onSingleColorChange)
+
         channel_label = QLabel("Channel", self)
         channel_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
         min_label = QLabel("Min", self)
         min_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
         max_label = QLabel("Max", self)
         max_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        scale_label = QLabel("Scale", self)
+        scale_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+
 
         self.one_color_tab.setLayout(self.one_color_tab.layout)
-        self.one_color_tab.layout.addWidget(QLabel(), 0, 0)
-        self.one_color_tab.layout.addWidget(channel_label, 1, 1)
-        self.one_color_tab.layout.addWidget(min_label, 1, 2)
-        self.one_color_tab.layout.addWidget(max_label, 1, 3)
-        self.one_color_tab.layout.addWidget(self.single_color_label, 2, 0)
-        self.one_color_tab.layout.addWidget(self.single_color_combo_box, 2, 1)
-        self.one_color_tab.layout.addWidget(self.one_color_min_editor, 2, 2)
-        self.one_color_tab.layout.addWidget(self.one_color_max_editor, 2, 3)
+        self.one_color_tab.layout.addWidget(channel_label, 0, 1)
+        self.one_color_tab.layout.addWidget(min_label, 0, 2)
+        self.one_color_tab.layout.addWidget(max_label, 0, 3)
+        self.one_color_tab.layout.addWidget(scale_label, 0, 4)
+        self.one_color_tab.layout.addWidget(self.single_color_label, 1, 0)
+        self.one_color_tab.layout.addWidget(self.single_color_combo_box, 1, 1)
+        self.one_color_tab.layout.addWidget(self.one_color_min_editor, 1, 2)
+        self.one_color_tab.layout.addWidget(self.one_color_max_editor, 1, 3)
+        self.one_color_tab.layout.addWidget(self.one_color_scale_editor, 1, 4)
 
 
     def initThreeColorUI(self):
@@ -417,7 +451,8 @@ class ControlWidget(QtWidgets.QWidget):
     def onSingleColorChange(self):
         self.annotator.updateSingleColorImage(self.single_color_combo_box.currentText(),
                                               float(self.one_color_min_editor.text()),
-                                              float(self.one_color_max_editor.text()))
+                                              float(self.one_color_max_editor.text()),
+                                              float(self.one_color_scale_editor.text()))
 
     def onThreeColorChange(self):
         red_channel = self.red_combo_box.currentText()
@@ -554,11 +589,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # Edit Menu
         self.editMenu = self.mainMenu.addMenu("Edit")
-        # undoEdit = QAction("&Undo Edit", self)
-        # undoEdit.setShortcut("Ctrl+Z")
-        # undoEdit.setStatusTip('Undo a change on the thematic map')
-        # undoEdit.triggered.connect(lambda: print("Attempting to undo an edit"))  # TODO: implement undo edit
-        # self.editMenu.addAction(undoEdit)
+        undoEdit = QAction("&Undo Edit", self)
+        undoEdit.setShortcut("Ctrl+Z")
+        undoEdit.setStatusTip('Undo a change on the thematic map')
+        undoEdit.triggered.connect(self.annotator.undo_action)
+        self.editMenu.addAction(undoEdit)
+        self.editMenu.addSeparator()
 
         eraseBoundaries = QAction("&Erase boundaries", self)
         eraseBoundaries.setShortcut("Ctrl+E")

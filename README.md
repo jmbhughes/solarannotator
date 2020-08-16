@@ -28,7 +28,8 @@ This tool is still under development. There are many features coming.
 - [x] Ability to scale in a three color image   
 - [x] Right click on a region in the thematic map and see its boundary in the preview
 - [x] Left click on a region in the thematic map to re-annotate all the contiguous pixels
-- [ ] Undo and redo annotations
+- [ ] Undo annotations
+- [ ] Redo annotations
 - [ ] Overlay HEK and other pre-determined annotations
 - [ ] Multiple normalization options
 - [x] Differentiate save and save as
