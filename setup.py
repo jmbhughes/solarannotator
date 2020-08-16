@@ -11,7 +11,7 @@ setup(
     name='solarannotator',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='0.2.4',
+    version='0.2.5',
     packages=['solarannotator'],
     url='',
     license='',
@@ -22,7 +22,9 @@ setup(
                       "matplotlib",
                       "astropy",
                       "numpy",
-                      "goes-solar-retriever"],
+                      "goes-solar-retriever",
+                      "scipy",
+                      "scikit-image"],
     data_files=[('solarannotator', ['cfg/default.json'])],
     entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
 

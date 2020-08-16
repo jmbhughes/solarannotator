@@ -9,6 +9,10 @@ from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
 from astropy.io import fits
 from matplotlib import path
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Polygon
+from skimage.morphology import binary_erosion
+import scipy
 
 import numpy as np
 import os
@@ -40,17 +44,19 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.current_theme_index = 0
 
         self.preview_data = self.composites['94'].data.copy()
-        print(type(self.preview_data))
         self.thmap_data = np.zeros((1280, 1280))
         self.thmap = ThematicMap(self.thmap_data, {'DATE-OBS': str(datetime.today())}, config.solar_class_name)
 
         layout = QtWidgets.QVBoxLayout()
 
         self.fig = Figure(figsize=(10, 5))
-        static_canvas = FigureCanvas(self.fig)
-        layout.addWidget(static_canvas)
+        canvas = FigureCanvas(self.fig)
+        canvas.mpl_connect('button_press_event', self.onclick)
 
-        self.axs = static_canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
+        layout.addWidget(canvas)
+
+        self.region_patches = []
+        self.axs = canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
         self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=1, cmap='gray')
         self.thmap_axesimage = self.axs[1].imshow(self.thmap_data,
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
@@ -59,7 +65,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.axs[0].set_title("Preview")
         self.axs[1].set_title("Thematic Map")
 
-        toolbar = NavigationToolbar(static_canvas, self)
+        toolbar = NavigationToolbar(canvas, self)
         layout.addWidget(toolbar)
         self.setLayout(layout)
 
@@ -87,6 +93,98 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.fig.canvas.draw_idle()
         self.thmap.data = self.thmap_data
 
+    def rename_region(self, event):
+        # draw patches
+        y, x = int(event.xdata), int(event.ydata)
+        label = self.thmap_data[x, y]
+        contiguous_regions = scipy.ndimage.label(self.thmap_data == label)[0]
+        this_region = contiguous_regions == (contiguous_regions[x, y])
+        self.thmap_data[this_region] = self.current_theme_index
+        self.thmap_axesimage.set_data(self.thmap_data)
+        self.thmap.data = self.thmap_data
+        self.fig.canvas.draw_idle()
+
+    def draw_event_region_boundary(self, event):
+        """
+        Draw a patch around the contiguous region in the preview image
+        :param event:
+        :return:
+        """
+        # draw patches
+        y, x = int(event.xdata), int(event.ydata)
+        label = self.thmap_data[x, y]
+        contiguous_regions = scipy.ndimage.label(self.thmap_data == label)[0]
+        this_region = contiguous_regions == (contiguous_regions[x, y])
+
+        # remove the boundaries so any region touching the edge isn't drawn odd
+        this_region[0, :] = 0
+        this_region[:, 0] = 0
+        this_region[this_region.shape[0] - 1, :] = 0
+        this_region[:, this_region.shape[1] - 1] = 0
+
+        # convert the region mask into just a true/false array of its boundary pixels
+        edges = binary_erosion(this_region) ^ this_region
+
+        # convert the boundary pixels into a path, moving around instead of just where
+        x, y = np.where(edges)
+        coords = np.dstack([x, y])[0]
+        path = [coords[0]]
+        coords = coords[1:]
+
+        while len(coords):
+            dist = np.sum(np.abs(path[-1] - coords), axis=1)
+            neighbor_index = np.argmin(dist)
+
+            if dist[neighbor_index] < 5:
+                path.append(coords[neighbor_index].copy())
+                coords[neighbor_index:-1] = coords[neighbor_index + 1:]
+                coords = coords[:-1]
+            else:
+                break
+
+        path = np.array(path)
+
+        clips = []
+        while len(coords) > 5:
+            dist = np.sum(np.abs(path[-1] - coords), axis=1)
+            neighbor_index = np.argmin(dist)
+            clip = [coords[neighbor_index].copy()]
+            coords[neighbor_index:-1] = coords[neighbor_index + 1:]
+            coords = coords[:-1]
+            while len(coords):
+                dist = np.sum(np.abs(clip[-1] - coords), axis=1)
+                neighbor_index = np.argmin(dist)
+                if dist[neighbor_index] < 5:
+                    clip.append(coords[neighbor_index].copy())
+                    coords[neighbor_index:-1] = coords[neighbor_index + 1:]
+                    coords = coords[:-1]
+                else:
+                    break
+            clips.append(np.array(clip))
+
+        # draw the continguous  on the selection area
+        self.region_patches.append(PatchCollection(
+            [Polygon(np.dstack([path[:, 1], path[:, 0]])[0], False,
+                     fill=False, facecolor=None,
+                     edgecolor="black", alpha=1, lw=2.5)] +
+            [Polygon(np.dstack([clip[:, 1], clip[:, 0]])[0], False,
+                     fill=False, facecolor=None,
+                     edgecolor="black", alpha=1, lw=2.0) for clip in clips],
+            match_original=True))
+        self.axs[0].add_collection(self.region_patches[-1])
+        self.fig.canvas.draw_idle()
+
+    def onclick(self, event):
+        """
+        Draw contours on the data for a click in the thematic map
+        :param event: mouse click on thematic map preview
+        """
+        if event.inaxes == self.axs[1]:
+            if event.button == 3:  # right click feature
+                self.draw_event_region_boundary(event)
+            if event.button == 1:
+                self.rename_region(event)
+
     def updateArray(self, array, indices, value):
         """
         updates array so that pixels at indices take on value
@@ -99,6 +197,12 @@ class AnnotationWidget(QtWidgets.QWidget):
         new_array = array.flatten()
         new_array[lin[indices]] = value
         return new_array.reshape(array.shape)
+
+    def clearBoundaries(self):
+        for patch in self.region_patches:
+            patch.remove()
+        self.region_patches = []
+        self.fig.canvas.draw_idle()
 
     def loadThematicMap(self, thmap):
         self.thmap = thmap
@@ -372,7 +476,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
 
-        self._setup_menubar()
 
         layout = QtWidgets.QVBoxLayout(self._main)
         self.annotator = AnnotationWidget(self.config)
@@ -380,6 +483,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self._setup_control_layout()
         layout.addLayout(self.control_layout)
+        self._setup_menubar()
+
 
     def _setup_control_layout(self):
         self.control_layout = QtWidgets.QHBoxLayout()
@@ -447,19 +552,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         exitButton.triggered.connect(sys.exit)
         self.fileMenu.addAction(exitButton)
 
-        # # Edit Menu
-        # self.editMenu = self.mainMenu.addMenu("Edit")
+        # Edit Menu
+        self.editMenu = self.mainMenu.addMenu("Edit")
         # undoEdit = QAction("&Undo Edit", self)
         # undoEdit.setShortcut("Ctrl+Z")
         # undoEdit.setStatusTip('Undo a change on the thematic map')
         # undoEdit.triggered.connect(lambda: print("Attempting to undo an edit"))  # TODO: implement undo edit
         # self.editMenu.addAction(undoEdit)
 
+        eraseBoundaries = QAction("&Erase boundaries", self)
+        eraseBoundaries.setShortcut("Ctrl+E")
+        eraseBoundaries.setStatusTip("Remove all the boundaries drawn on a map")
+        eraseBoundaries.triggered.connect(self.annotator.clearBoundaries)
+        self.editMenu.addAction(eraseBoundaries)
+
     def new_file(self):
         self.new_file_popup = NewFilePopup(self)
         self.new_file_popup.setGeometry(100, 200, 100, 100)
         self.new_file_popup.show()
-        print("test")
+        self.annotator.clearBoundaries()
 
     def file_open(self):
         dlg = QFileDialog()
@@ -469,6 +580,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             if thmap.complies_with_mapping(self.config.solar_class_name):
                 self.annotator.loadThematicMap(thmap)
                 self.controls.onTabChange()  # Use the tab change to automatically load the right image
+                self.annotator.clearBoundaries()
             else:
                 QMessageBox.critical(self,
                                      'Error: Could not open',
