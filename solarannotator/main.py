@@ -2,7 +2,6 @@
 
 from solarannotator.gui import ApplicationWindow
 from PyQt5 import QtWidgets
-import sys
 import argparse
 import os
 import sys

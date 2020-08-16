@@ -9,8 +9,12 @@ from dateutil.parser import parse as parse_date_str
 Image = namedtuple('Image', 'data header')
 
 
-class ImageSet:
+class ImageSet(QObject):
+    finishedDownloading = pyqtSignal()
+    pctFinished = pyqtSignal(int)
+
     def __init__(self, mapping):
+        super().__init__()
         self.images = mapping
 
     @staticmethod

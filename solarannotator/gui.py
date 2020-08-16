@@ -1,22 +1,17 @@
-import tempfile
-import time
 import sys
 import PyQt5
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, \
-    QComboBox, QLineEdit, QProgressBar, QVBoxLayout
-from PyQt5.QtCore import QDateTime, QThread, pyqtSignal, QObject, pyqtSlot
+    QComboBox, QLineEdit
+from PyQt5.QtCore import QDateTime
 from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
-from astropy.io import fits
 from matplotlib import path
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 from skimage.morphology import binary_erosion
 import scipy
-
 import numpy as np
-import os
 from matplotlib.widgets import LassoSelector
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
 
