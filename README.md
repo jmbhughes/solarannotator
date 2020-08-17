@@ -34,5 +34,5 @@ This tool is still under development. There are many features coming.
 - [ ] Overlay HEK and other pre-determined annotations
 - [ ] Multiple normalization options
 - [x] Differentiate save and save as
-- [ ] Add color legend to radio buttons
+- [x] Add color legend to radio buttons
 - [ ] Robustify the thematic map io for better metadata passing

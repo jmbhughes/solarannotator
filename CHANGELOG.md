@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), 
 
 ## Upcoming
+
+## [0.2.6]
 ### Added
 * Warning box if composite data does not exist
 * Scaling for single color images
@@ -24,5 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.2.4]
 First stable release. Not all features added. 
 
+[0.2.6]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.6
 [0.2.5]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.5 
 [0.2.4]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.4
