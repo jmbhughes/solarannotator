@@ -24,7 +24,8 @@ setup(
                       "numpy",
                       "goes-solar-retriever",
                       "scipy",
-                      "scikit-image"],
+                      "scikit-image",
+                      "pillow"],
     data_files=[('solarannotator', ['cfg/default.json'])],
     entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
 

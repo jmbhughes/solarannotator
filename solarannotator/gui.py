@@ -14,6 +14,7 @@ import scipy
 import numpy as np
 from matplotlib.widgets import LassoSelector
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
+from PIL import ImageColor
 
 if is_pyqt5():  # TODO: update to use the non-deprecated approach
     from matplotlib.backends.backend_qt5agg import (
@@ -528,6 +529,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._setup_theme_radio_buttons()
 
     def _setup_theme_radio_buttons(self):
+        def radio_button_font_color(background_color_hex):
+            """
+            Select white for dark color backgrounds and black for light colored backgrounds
+            """
+            background_color_rgb = ImageColor.getcolor(background_color_hex, "RGB")
+            if any([c < 50 for c in background_color_rgb]):
+                return "#FFFFFF"
+            else:
+                return "#000000"
+
         theme_selection_layout = QtWidgets.QVBoxLayout()
         radiobuttons = dict()
 
@@ -536,6 +547,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         radiobuttons['unlabeled'].index = 0
         radiobuttons['unlabeled'].setChecked(True)
         radiobuttons['unlabeled'].toggled.connect(self.onClickedRadioButton)
+        background_color = '#FFFFFF'
+        font_color = radio_button_font_color(background_color)
+        radiobuttons['unlabeled'].setStyleSheet("QRadioButton"
+                                          "{"
+                                          "background-color : " + background_color + ";"
+                                          "color :" + font_color + ""
+                                           "}")
         theme_selection_layout.addWidget(radiobuttons['unlabeled'])
 
         # add rest of theme buttons
@@ -543,10 +561,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             radiobuttons[theme] = QRadioButton(theme)
             radiobuttons[theme].index = index
             radiobuttons[theme].toggled.connect(self.onClickedRadioButton)
-            color_string = self.config.solar_colors[theme]
+            background_color = self.config.solar_colors[theme]
+            font_color = radio_button_font_color(background_color)
             radiobuttons[theme].setStyleSheet("QRadioButton"
                                        "{"
-                                       "background-color : " + color_string + ""
+                                       "background-color : " + background_color + ";"
+                                       "color :" + font_color + ""                                       
                                        "}")
 
             theme_selection_layout.addWidget(radiobuttons[theme])
@@ -625,9 +645,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.annotator.clearBoundaries()
             else:
                 QMessageBox.critical(self,
-                                     'Error: Could not open',
+                                    'Error: Could not open',
                                      'Thematic map could not open because theme mapping differs from configuration',
-                                      QMessageBox.Close)
+                                     QMessageBox.Close)
 
     def prompt_not_initialized(self):
         QMessageBox.critical(self,

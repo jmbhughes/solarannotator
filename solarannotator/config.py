@@ -18,7 +18,7 @@ class Config:
         self.solar_class_index = {c: n for c, n in self.solar_classes}
         self.solar_class_name = {n: c for c, n in config['classes'].items()}
         self.solar_colors = config['display']['colors']
-        self.color_table = [self.solar_colors[self.solar_class_name[i]] if i in self.solar_class_name else 'white'
+        self.color_table = [self.solar_colors[self.solar_class_name[i]] if i in self.solar_class_name else '#FFFFFF'
                             for i in range(max(list(self.solar_class_name.keys()))+1)]
         self.solar_cmap = matplotlib.colors.ListedColormap(self.color_table)
         self.max_index = max(list(self.solar_class_name.keys()))

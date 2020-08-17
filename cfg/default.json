@@ -12,7 +12,7 @@
 
   "display":{
     "colors":{
-      "outer_space": "black",
+      "outer_space": "#000000",
       "bright_region": "#F0E442",
       "filament": "#D55E00",
       "prominence": "#E69F00",
