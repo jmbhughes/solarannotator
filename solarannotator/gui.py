@@ -56,8 +56,8 @@ class AnnotationWidget(QtWidgets.QWidget):
 
         self.region_patches = []
         self.axs = canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
-        self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=1, cmap='gray')
-        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data,
+        self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=1, cmap='gray', origin='lower')
+        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data, origin='lower',
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
         self.axs[1].set_axis_off()
@@ -314,17 +314,17 @@ class ControlWidget(QtWidgets.QWidget):
         self.single_color_combo_box.currentTextChanged.connect(self.onSingleColorChange)
 
         self.one_color_min_editor = QLineEdit()
-        self.one_color_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.one_color_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.one_color_min_editor.setText("0.0")
         self.one_color_min_editor.editingFinished.connect(self.onSingleColorChange)
 
         self.one_color_max_editor = QLineEdit()
-        self.one_color_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.one_color_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.one_color_max_editor.setText("99.9")
         self.one_color_max_editor.editingFinished.connect(self.onSingleColorChange)
 
         self.one_color_scale_editor = QLineEdit()
-        self.one_color_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.one_color_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.one_color_scale_editor.setText("0.25")
         self.one_color_scale_editor.editingFinished.connect(self.onSingleColorChange)
 
@@ -370,15 +370,15 @@ class ControlWidget(QtWidgets.QWidget):
         self.red_combo_box.setCurrentIndex(2)
         self.red_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.red_min_editor = QLineEdit()
-        self.red_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.red_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.red_min_editor.setText("0.0")
         self.red_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.red_max_editor = QLineEdit()
-        self.red_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.red_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.red_max_editor.setText("100")
         self.red_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.red_scale_editor = QLineEdit()
-        self.red_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.red_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.red_scale_editor.setText("0.25")
         self.red_scale_editor.editingFinished.connect(self.onThreeColorChange)
 
@@ -390,15 +390,15 @@ class ControlWidget(QtWidgets.QWidget):
         self.green_combo_box.setCurrentIndex(3)
         self.green_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.green_min_editor = QLineEdit()
-        self.green_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.green_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.green_min_editor.setText("0.0")
         self.green_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.green_max_editor = QLineEdit()
-        self.green_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.green_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.green_max_editor.setText("100")
         self.green_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.green_scale_editor = QLineEdit()
-        self.green_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.green_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.green_scale_editor.setText("0.25")
         self.green_scale_editor.editingFinished.connect(self.onThreeColorChange)
 
@@ -410,15 +410,15 @@ class ControlWidget(QtWidgets.QWidget):
         self.blue_combo_box.setCurrentIndex(4)
         self.blue_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.blue_min_editor = QLineEdit()
-        self.blue_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.blue_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.blue_min_editor.setText("0.0")
         self.blue_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.blue_max_editor = QLineEdit()
-        self.blue_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 1))
+        self.blue_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.blue_max_editor.setText("100")
         self.blue_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.blue_scale_editor = QLineEdit()
-        self.blue_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.blue_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
         self.blue_scale_editor.setText("0.25")
         self.blue_scale_editor.editingFinished.connect(self.onThreeColorChange)
 
@@ -507,6 +507,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.output_fn = None
         self.initialized = False
         self.initUI()
+        self.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.CustomizeWindowHint |
+            QtCore.Qt.WindowTitleHint |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+        )
+
 
     def initUI(self):
         self._main = QtWidgets.QWidget()
@@ -610,7 +618,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         exitButton = QAction('Exit', self)
         exitButton.setShortcut('Ctrl+Q')
         exitButton.setStatusTip('Exit application')
-        exitButton.triggered.connect(sys.exit)
+        exitButton.triggered.connect(self.exit)
         self.fileMenu.addAction(exitButton)
 
         # Edit Menu
@@ -628,11 +636,23 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         eraseBoundaries.triggered.connect(self.annotator.clearBoundaries)
         self.editMenu.addAction(eraseBoundaries)
 
+    def exit(self):
+        if self.initialized:
+            answer = QMessageBox.question(self, '', "Would you like to save?",
+                                          QMessageBox.Yes | QMessageBox.No)
+            if answer == QMessageBox.Yes:
+                self.file_save_as()
+        sys.exit()
+
+    def closeEvent(self, *args, **kwargs):
+        self.exit()
+
     def new_file(self):
         self.new_file_popup = NewFilePopup(self)
         self.new_file_popup.setGeometry(100, 200, 100, 100)
         self.new_file_popup.show()
         self.annotator.clearBoundaries()
+        self.initialized = True
 
     def file_open(self):
         dlg = QFileDialog()
@@ -643,6 +663,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.annotator.loadThematicMap(thmap)
                 self.controls.onTabChange()  # Use the tab change to automatically load the right image
                 self.annotator.clearBoundaries()
+                self.initialized = True
             else:
                 QMessageBox.critical(self,
                                     'Error: Could not open',
@@ -667,7 +688,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def file_save_as(self):
         if self.initialized:
             dlg = QFileDialog()
-            fname = dlg.getSaveFileName(None, "Open Thematic Map", "", "FITS files (*.fits)")
+            fname = dlg.getSaveFileName(None, "Save Thematic Map", "", "FITS files (*.fits)")
             if fname != ('', ''):
                 self.annotator.thmap.save(fname[0])
                 self.output_fn = fname[0]
