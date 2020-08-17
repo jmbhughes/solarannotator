@@ -11,7 +11,7 @@ setup(
     name='solarannotator',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='0.2.5',
+    version='0.2.6',
     packages=['solarannotator'],
     url='',
     license='',
