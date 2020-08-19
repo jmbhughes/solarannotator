@@ -64,9 +64,10 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.axs[0].set_title("Preview")
         self.axs[1].set_title("Thematic Map")
 
-        toolbar = NavigationToolbar(canvas, self)
-        layout.addWidget(toolbar)
+        self.toolbar = NavigationToolbar(canvas, self)
+        layout.addWidget(self.toolbar)
         self.setLayout(layout)
+        import pdb; pdb.set_trace()
 
         # add selection layer for lasso
         self.shape = (1280, 1280)  # TODO: replace with dynamic detection
@@ -192,9 +193,8 @@ class AnnotationWidget(QtWidgets.QWidget):
         if event.inaxes == self.axs[1]:
             if event.button == 3:  # right click feature
                 self.draw_event_region_boundary(event)
-            if event.button == 1:
-                pass
-                # self.rename_region(event)
+            if event.button == 1 and self.toolbar.mode == "":
+                self.rename_region(event)
 
     def updateArray(self, array, indices, value):
         """
