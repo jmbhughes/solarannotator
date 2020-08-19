@@ -225,6 +225,7 @@ class AnnotationWidget(QtWidgets.QWidget):
             self.data_does_not_exist_popup()
         else:
             self.thmap = thmap
+            self.thmap.copy_195_metadata(self.composites)
             self.history = [thmap.data.copy()]
             self.thmap_data = thmap.data
             self.thmap_axesimage.set_data(self.thmap_data)
@@ -681,6 +682,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             if self.output_fn is None:
                 self.file_save_as()
             else:
+                self.annotator.thmap.metadata['DATE'] = str(datetime.today())
                 self.annotator.thmap.save(self.output_fn)
         else:
             self.prompt_not_initialized()
@@ -690,6 +692,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             dlg = QFileDialog()
             fname = dlg.getSaveFileName(None, "Save Thematic Map", "", "FITS files (*.fits)")
             if fname != ('', ''):
+                self.annotator.thmap.metadata['DATE'] = str(datetime.today())
                 self.annotator.thmap.save(fname[0])
                 self.output_fn = fname[0]
         else:

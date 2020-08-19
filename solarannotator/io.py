@@ -120,3 +120,11 @@ class ThematicMap:
         sec_hdu = fits.BinTableHDU.from_columns([c1, c2], header=bintbl_hdr)
         hdu = fits.HDUList([pri_hdu, sec_hdu])
         hdu.writeto(path, overwrite=True, checksum=True)
+
+    def copy_195_metadata(self, image_set):
+        keys_to_copy = ['YAW_FLIP', 'ECLIPSE', 'WCSNAME', 'CTYPE1', 'CTYPE2', 'CUNIT1', 'CUNIT2',
+                        'PC1_1', 'PC1_2', 'PC2_1', 'PC2_2', 'CDELT1', 'CDELT2', 'CRVAL1', 'CRVAL2',
+                        'CRPIX1', 'CRPIX2', 'DIAM_SUN', 'LONPOLE', 'CROTA', 'SOLAR_B0', 'ORIENT', 'DSUN_OBS']
+        if image_set.images['195'].header != {}:
+            for key in keys_to_copy:
+                self.metadata[key] = image_set.images['195'].header[key]
