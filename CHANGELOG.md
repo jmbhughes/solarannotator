@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Upcoming
 
+## [0.2.8]
+### Removed
+* Temporarily removed relabeling by left click on thematic map due to bug
+
 ## [0.2.7]
 ### Added
 * Program prompts the user to save before exiting

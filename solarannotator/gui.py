@@ -193,7 +193,8 @@ class AnnotationWidget(QtWidgets.QWidget):
             if event.button == 3:  # right click feature
                 self.draw_event_region_boundary(event)
             if event.button == 1:
-                self.rename_region(event)
+                pass
+                # self.rename_region(event)
 
     def updateArray(self, array, indices, value):
         """
