@@ -240,7 +240,9 @@ class AnnotationWidget(QtWidgets.QWidget):
         upper = np.nanpercentile(self.preview_data, upper_percentile)
         self.preview_data[self.preview_data < lower] = lower
         self.preview_data[self.preview_data > upper] = upper
-        self.preview_data /= np.nanmax(self.preview_data)
+        self.preview_data = (self.preview_data - np.nanmin(self.preview_data)) \
+                            / (np.nanmax(self.preview_data) - np.nanmin(self.preview_data))
+        # self.preview_data /= np.nanmax(self.preview_data)
         self.preview_axesimage.set_data(self.preview_data)
         self.fig.canvas.draw_idle()
 
@@ -271,8 +273,9 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.preview_data[self.preview_data[:, :, 2] > blue_upper] = blue_upper
         
         for index in [0, 1, 2]:
-            self.preview_data[:, :, index] /= np.nanmax(self.preview_data[:, :, index])
-
+            # self.preview_data[:, :, index] /= np.nanmax(self.preview_data[:, :, index])
+            self.preview_data[:, :, index] = (self.preview_data[:, :, index] - np.nanmin(self.preview_data[:, :, index])) \
+                                / (np.nanmax(self.preview_data[:, :, index]) - np.nanmin(self.preview_data[:, :, index]))
         self.preview_axesimage.set_data(self.preview_data)
         self.fig.canvas.draw_idle()
 
@@ -317,7 +320,7 @@ class ControlWidget(QtWidgets.QWidget):
 
         self.one_color_min_editor = QLineEdit()
         self.one_color_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.one_color_min_editor.setText("0.0")
+        self.one_color_min_editor.setText("3.0")
         self.one_color_min_editor.editingFinished.connect(self.onSingleColorChange)
 
         self.one_color_max_editor = QLineEdit()
@@ -372,11 +375,11 @@ class ControlWidget(QtWidgets.QWidget):
         self.red_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.red_min_editor = QLineEdit()
         self.red_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.red_min_editor.setText("0.0")
+        self.red_min_editor.setText("3.0")
         self.red_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.red_max_editor = QLineEdit()
         self.red_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.red_max_editor.setText("100")
+        self.red_max_editor.setText("99.9")
         self.red_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.red_scale_editor = QLineEdit()
         self.red_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
@@ -392,11 +395,11 @@ class ControlWidget(QtWidgets.QWidget):
         self.green_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.green_min_editor = QLineEdit()
         self.green_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.green_min_editor.setText("0.0")
+        self.green_min_editor.setText("3.0")
         self.green_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.green_max_editor = QLineEdit()
         self.green_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.green_max_editor.setText("100")
+        self.green_max_editor.setText("99.9")
         self.green_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.green_scale_editor = QLineEdit()
         self.green_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
@@ -412,11 +415,11 @@ class ControlWidget(QtWidgets.QWidget):
         self.blue_combo_box.currentTextChanged.connect(self.onThreeColorChange)
         self.blue_min_editor = QLineEdit()
         self.blue_min_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.blue_min_editor.setText("0.0")
+        self.blue_min_editor.setText("3.0")
         self.blue_min_editor.editingFinished.connect(self.onThreeColorChange)
         self.blue_max_editor = QLineEdit()
         self.blue_max_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
-        self.blue_max_editor.setText("100")
+        self.blue_max_editor.setText("99.9")
         self.blue_max_editor.editingFinished.connect(self.onThreeColorChange)
         self.blue_scale_editor = QLineEdit()
         self.blue_scale_editor.setValidator(QDoubleValidator(0.0, 100.0, 3))
