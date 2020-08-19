@@ -2,7 +2,7 @@ import sys
 import PyQt5
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, \
-    QComboBox, QLineEdit
+    QComboBox, QLineEdit, QSizePolicy
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
@@ -67,7 +67,6 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.toolbar = NavigationToolbar(canvas, self)
         layout.addWidget(self.toolbar)
         self.setLayout(layout)
-        import pdb; pdb.set_trace()
 
         # add selection layer for lasso
         self.shape = (1280, 1280)  # TODO: replace with dynamic detection
@@ -77,6 +76,7 @@ class AnnotationWidget(QtWidgets.QWidget):
 
         lineprops = dict(color="red", linewidth=2)
         self.lasso = LassoSelector(self.axs[0], self.onlasso, lineprops=lineprops)
+        self.fig.tight_layout()
 
     def onlasso(self, verts):
         """
@@ -338,7 +338,6 @@ class ControlWidget(QtWidgets.QWidget):
         max_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
         scale_label = QLabel("Scale", self)
         scale_label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
-
 
         self.one_color_tab.setLayout(self.one_color_tab.layout)
         self.one_color_tab.layout.addWidget(channel_label, 0, 1)

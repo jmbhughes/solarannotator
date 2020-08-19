@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Upcoming
 
+## [0.2.9]
+### Added
+* Added back relabeling by left click after bug fix
+
+### Changed
+* Switched to tight layout for better space usage in annotation window
+
 ## [0.2.8]
 ### Removed
 * Temporarily removed relabeling by left click on thematic map due to bug
@@ -42,6 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.2.4]
 First stable release. Not all features added. 
 
+[0.2.9]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.9
+[0.2.8]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.7
 [0.2.6]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.6
 [0.2.5]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.5 
