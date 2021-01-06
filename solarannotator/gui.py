@@ -515,10 +515,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             QtCore.Qt.Window |
             QtCore.Qt.CustomizeWindowHint |
             QtCore.Qt.WindowTitleHint |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint
         )
-
 
     def initUI(self):
         self._main = QtWidgets.QWidget()
@@ -532,7 +530,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._setup_control_layout()
         layout.addLayout(self.control_layout)
         self._setup_menubar()
-
 
     def _setup_control_layout(self):
         self.control_layout = QtWidgets.QHBoxLayout()

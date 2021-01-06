@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), 
 
+## [0.2.11]
+### Changed
+* GUI no longer has to stay on top of other windows
+
 ## [0.2.10]
 ### Fixed
 * Normalization now adjusts to spread the data over the entire data range
@@ -51,6 +55,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.2.4]
 First stable release. Not all features added. 
 
+[0.2.11]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.11
+[0.2.10]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.10      
 [0.2.9]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.9
 [0.2.8]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.7
