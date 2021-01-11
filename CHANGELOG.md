@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), 
 
+## [0.2.13]
+### Changed
+* GUI has a window title of "SolarAnnotator" that gets update with the current file's time when loaded,
+previously did not work when a new image was made. Now it does.
+
 ## [0.2.12]
 ### New
 * GUI has a window title of "SolarAnnotator" that gets update with the current file's time when loaded
@@ -60,6 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.2.4]
 First stable release. Not all features added. 
 
+[0.2.13]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.13
 [0.2.12]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.12
 [0.2.11]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.11
 [0.2.10]: https://github.com/jmbhughes/solarannotator/releases/tag/v0.2.10      

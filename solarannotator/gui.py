@@ -502,6 +502,7 @@ class NewFilePopup(QWidget):
         self.parent.annotator.loadThematicMap(new_thmap)
         self.parent.controls.onTabChange()  # Us
         self.close()
+        self.parent.setWindowTitle("SolarAnnotator: {}".format(new_thmap.date_obs))
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
