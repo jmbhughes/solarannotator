@@ -513,7 +513,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.setWindowFlags(
             QtCore.Qt.Window |
-            # QtCore.Qt.CustomizeWindowHint |
+            QtCore.Qt.CustomizeWindowHint |
             QtCore.Qt.WindowTitleHint |
             QtCore.Qt.WindowMinimizeButtonHint |
             QtCore.Qt.WindowMaximizeButtonHint |
