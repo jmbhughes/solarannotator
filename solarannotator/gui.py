@@ -513,16 +513,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.CustomizeWindowHint |
+            # QtCore.Qt.CustomizeWindowHint |
             QtCore.Qt.WindowTitleHint |
+            QtCore.Qt.WindowMinimizeButtonHint |
+            QtCore.Qt.WindowMaximizeButtonHint |
             QtCore.Qt.WindowCloseButtonHint
         )
+        self.setWindowTitle("SolarAnnotator")
 
     def initUI(self):
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
-
-
         layout = QtWidgets.QVBoxLayout(self._main)
         self.annotator = AnnotationWidget(self.config)
         layout.addWidget(self.annotator)
@@ -665,6 +666,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.controls.onTabChange()  # Use the tab change to automatically load the right image
                 self.annotator.clearBoundaries()
                 self.initialized = True
+                self.setWindowTitle("SolarAnnotator: {}".format(thmap.date_obs))
             else:
                 QMessageBox.critical(self,
                                     'Error: Could not open',
