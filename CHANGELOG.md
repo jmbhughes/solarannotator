@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.2.12]
 ### New
 * GUI has a window title of "SolarAnnotator" that gets update with the current file's time when loaded
+* Minimzie and maximize buttons
 
 ## [0.2.11]
 ### Changed
