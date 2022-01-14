@@ -13,15 +13,9 @@ from skimage.morphology import binary_erosion
 import scipy
 import numpy as np
 from matplotlib.widgets import LassoSelector
-from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
+from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from PIL import ImageColor
-
-if is_pyqt5():  # TODO: update to use the non-deprecated approach
-    from matplotlib.backends.backend_qt5agg import (
-        FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
-else:
-    from matplotlib.backends.backend_qt4agg import (
-        FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.backends.backend_qt5agg import FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
 if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
