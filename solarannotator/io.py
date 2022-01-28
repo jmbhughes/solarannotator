@@ -104,7 +104,7 @@ class ThematicMap:
         :param path: where to save thematic maps fits file
         :return:
         """
-        pri_hdu = fits.PrimaryHDU(data=self.data)
+        pri_hdu = fits.PrimaryHDU(data=self.data.astype(np.uint8))
         for k, v in self.metadata.items():
             if k != 'COMMENT':
                 pri_hdu.header[k] = v
