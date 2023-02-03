@@ -51,7 +51,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.region_patches = []
         self.axs = canvas.figure.subplots(ncols=2, sharex=True, sharey=True)
         self.preview_axesimage = self.axs[0].imshow(self.preview_data, vmin=0, vmax=1, cmap='gray', origin='lower')
-        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data, origin='lower',
+        self.thmap_axesimage = self.axs[1].imshow(self.thmap_data, origin='lower', interpolation='none',
                                                   vmin=0, vmax=config.max_index, cmap=config.solar_cmap)
         self.axs[0].set_axis_off()
         self.axs[1].set_axis_off()
