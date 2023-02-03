@@ -650,6 +650,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.new_file_popup.show()
         self.annotator.clearBoundaries()
         self.initialized = True
+        self.output_fn = None
 
     def file_open(self):
         dlg = QFileDialog()
@@ -662,6 +663,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.annotator.clearBoundaries()
                 self.initialized = True
                 self.setWindowTitle("SolarAnnotator: {}".format(thmap.date_obs))
+                self.output_fn = None
             else:
                 QMessageBox.critical(self,
                                     'Error: Could not open',
