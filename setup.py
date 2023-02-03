@@ -25,7 +25,12 @@ setup(
                       "goes-solar-retriever",
                       "scipy",
                       "scikit-image",
-                      "pillow"],
+                      "pillow",
+                      "sunpy",
+                      "lxml",
+                      "reproject",
+                      "zeep",
+                      "drms"],
     data_files=[('solarannotator', ['cfg/default.json'])],
     entry_points={"console_scripts": ["SolarAnnotator = solarannotator.main:main"]}
 

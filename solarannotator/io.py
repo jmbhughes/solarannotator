@@ -5,6 +5,12 @@ from collections import namedtuple
 import tempfile
 import os
 from dateutil.parser import parse as parse_date_str
+from sunpy.net import Fido, attrs as a
+import astropy.units as u
+from datetime import timedelta
+import sunpy.map
+from sunpy.coordinates import Helioprojective
+
 
 Image = namedtuple('Image', 'data header')
 
@@ -16,6 +22,43 @@ class ImageSet:
 
     @staticmethod
     def retrieve(date):
+        full_set = ImageSet._load_suvi_composites(date)
+        full_set['gong'] = ImageSet._load_gong_image(date, full_set['195'])
+        return ImageSet(full_set)
+
+    @staticmethod
+    def _load_gong_image(date, suvi_195_image):
+        # Find an image and download it
+        results = Fido.search(a.Time(date-timedelta(hours=1), date+timedelta(hours=1)),
+                              a.Wavelength(6563 * u.Angstrom), a.Source("GONG"))
+        selection = results[0][len(results[0])//2]  # only download the middle image
+        downloads = Fido.fetch(selection)
+        with fits.open(downloads[0]) as hdul:
+            gong_data = hdul[1].data
+            gong_head = hdul[1].header
+
+        # update the header to actually load in a SunPy map
+        gong_head['CTYPE1'] = "HPLN-TAN"
+        gong_head['CTYPE2'] = "HPLT-TAN"
+        gong_head['CUNIT1'] = "arcsec"
+        gong_head['CUNIT2'] = "arcsec"
+        # number below from SunPy discussions: https://github.com/sunpy/sunpy/issues/6656#issuecomment-1344413011
+        gong_head['CDELT1'] = 1.082371820584223
+        gong_head['CDELT2'] = 1.082371820584223
+
+        # Load as a map
+        gong_map = sunpy.map.Map(gong_data, gong_head)
+        suvi_map = sunpy.map.Map(suvi_195_image.data, suvi_195_image.header)
+        suvi_head = suvi_195_image.header
+
+        with Helioprojective.assume_spherical_screen(suvi_map.observer_coordinate, only_off_disk=True):
+            out = gong_map.reproject_to(suvi_head)
+
+        return Image(out.data, dict(out.meta))
+
+
+    @staticmethod
+    def _load_suvi_composites(date):
         satellite = Satellite.GOES16
         products = {"94": Product.suvi_l2_ci094,
                     "131": Product.suvi_l2_ci131,
@@ -32,7 +75,8 @@ class ImageSet:
                 header = hdus[1].header
                 composites[wavelength] = Image(data, header)
             os.remove(fn)
-        return ImageSet(composites)
+        return composites
+
 
     @staticmethod
     def create_empty():
@@ -41,7 +85,8 @@ class ImageSet:
                    '171': Image(np.zeros((1280, 1280)), {}),
                    '195': Image(np.zeros((1280, 1280)), {}),
                    '284': Image(np.zeros((1280, 1280)), {}),
-                   '304': Image(np.zeros((1280, 1280)), {})}
+                   '304': Image(np.zeros((1280, 1280)), {}),
+                   'gong': Image(np.zeros((1280, 1280)), {})}
         return ImageSet(mapping)
 
     def __getitem__(self, key):
