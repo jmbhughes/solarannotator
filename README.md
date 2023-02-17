@@ -5,10 +5,26 @@
 A tool for annotating solar images with themes. 
 
 ## Install
-```pip install solarannotator```
+It's best to install in a clean virtual environment to avoid package conflicts or incorrect versions. 
 
-## Running and uasage
-Execute from the terminal after installing by running 
+On a Mac or Linux machine:
+```
+python -m venv venv
+source venv/bin/activate
+pip install solarannotator
+```
+
+On a Windows machine:
+```
+py -m venv venv
+.\venv\Scripts\activate
+py -m pip install solarannotator
+```
+
+For more details [visit the Packaging guide](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
+
+## Running and usage
+Execute from the terminal after installing by running inside your virtual environment.
 ```SolarAnnotator```
 
 This launches the main software:
@@ -30,9 +46,11 @@ This tool is still under development. There are many features coming.
 - [x] Right click on a region in the thematic map and see its boundary in the preview
 - [x] Left click on a region in the thematic map to re-annotate all the contiguous pixels
 - [x] Undo annotations
-- [ ] Redo annotations
-- [ ] Overlay HEK and other pre-determined annotations
-- [ ] Multiple normalization options
 - [x] Differentiate save and save as
 - [x] Add color legend to radio buttons
-- [ ] Robustify the thematic map io for better metadata passing
+- [ ] Redo annotations, after ctrl-z
+- [ ] Overlay HEK and other pre-determined annotations
+- [ ] Multiple normalization options
+- [ ] Robustify the thematic map io for better metadata passing, also use SunPy maps
+- [ ] Add a help guide
+- [ ] Add an ability to load a template when you create a new date
