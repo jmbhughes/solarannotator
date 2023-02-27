@@ -223,10 +223,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         else:
             self.thmap = thmap
             if template:
-                print("making a template")
                 self.thmap = create_thmap_template(self.composites)
-            else:
-                print("NOPE")
             self.thmap.copy_195_metadata(self.composites)
             self.history = [thmap.data.copy()]
             self.thmap_data = self.thmap.data
