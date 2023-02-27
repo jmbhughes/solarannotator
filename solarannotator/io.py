@@ -96,6 +96,53 @@ class ImageSet:
         return list(self.images.keys())
 
 
+    def get_solar_radius(self, channel="304", refine=True):
+        """
+        Gets the solar radius from the header of the specified channel
+        :param channel: channel to get radius from
+        :param refine: whether to refine the metadata radius to better approximate the edge
+        :return: solar radius specified in the header
+        """
+
+        # Return the solar radius
+        if channel not in self.channels():
+            raise RuntimeError("Channel requested must be one of {}".format(self.channels()))
+        try:
+            solar_radius = self.images[channel].header['DIAM_SUN'] / 2
+            if refine:
+                composite_img = self.images[channel].data
+                # Determine image size
+                image_size = np.shape(composite_img)[0]
+                # Find center and radial mesh grid
+                center = (image_size / 2) - 0.5
+                xm, ym = np.meshgrid(np.linspace(0, image_size - 1, num=image_size),
+                                     np.linspace(0, image_size - 1, num=image_size))
+                xm_c = xm - center
+                ym_c = ym - center
+                rads = np.sqrt(xm_c ** 2 + ym_c ** 2)
+                # Iterate through radii within a range past the solar radius
+                accuracy = 15
+                rad_iterate = np.linspace(solar_radius, solar_radius + 50, num=accuracy)
+                img_avgs = []
+                for rad in rad_iterate:
+                    # Create a temporary solar image corresponding to the layer
+                    solar_layer = np.zeros((image_size, image_size))
+                    # Find indices in mask of the layer
+                    indx_layer = np.where(rad >= rads)
+                    # Set temporary image corresponding to indices to solar image values
+                    solar_layer[indx_layer] = composite_img[indx_layer]
+                    # Appends average to image averages
+                    img_avgs.append(np.mean(solar_layer))
+                # Find "drop off" where mask causes average image brightness to drop
+                diff_avgs = np.asarray(img_avgs[0:accuracy - 1]) - np.asarray(img_avgs[1:accuracy])
+                # Return the radius that best represents the edge of the sun
+                solar_radius = rad_iterate[np.where(np.amax(diff_avgs))[0] + 1]
+        except KeyError:
+            raise RuntimeError("Header does not include the solar diameter or radius")
+        else:
+            return solar_radius
+
+
 class ThematicMap:
     def __init__(self, data, metadata, theme_mapping):
         """
