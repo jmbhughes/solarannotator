@@ -4,6 +4,7 @@
 [![DOI](https://zenodo.org/badge/286337290.svg)](https://zenodo.org/badge/latestdoi/286337290)
 
 A tool for annotating solar images with themes. 
+![](screenshot.png)
 
 ## Install
 It's best to install in a clean virtual environment to avoid package conflicts or incorrect versions. 
