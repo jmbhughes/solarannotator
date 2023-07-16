@@ -11,7 +11,6 @@ from datetime import timedelta
 import sunpy.map
 from sunpy.coordinates import Helioprojective
 
-
 Image = namedtuple('Image', 'data header')
 
 
@@ -29,9 +28,9 @@ class ImageSet:
     @staticmethod
     def _load_gong_image(date, suvi_195_image):
         # Find an image and download it
-        results = Fido.search(a.Time(date-timedelta(hours=1), date+timedelta(hours=1)),
+        results = Fido.search(a.Time(date - timedelta(hours=1), date + timedelta(hours=1)),
                               a.Wavelength(6563 * u.Angstrom), a.Source("GONG"))
-        selection = results[0][len(results[0])//2]  # only download the middle image
+        selection = results[0][len(results[0]) // 2]  # only download the middle image
         downloads = Fido.fetch(selection)
         with fits.open(downloads[0]) as hdul:
             gong_data = hdul[1].data
@@ -56,7 +55,6 @@ class ImageSet:
 
         return Image(out.data, dict(out.meta))
 
-
     @staticmethod
     def _load_suvi_composites(date):
         satellite = Satellite.GOES16
@@ -77,7 +75,6 @@ class ImageSet:
             os.remove(fn)
         return composites
 
-
     @staticmethod
     def create_empty():
         mapping = {"94": Image(np.zeros((1280, 1280)), {}),
@@ -94,7 +91,6 @@ class ImageSet:
 
     def channels(self):
         return list(self.images.keys())
-
 
     def get_solar_radius(self, channel="304", refine=True):
         """

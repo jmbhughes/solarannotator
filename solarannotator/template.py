@@ -43,6 +43,8 @@ def create_thmap_template(image_set, limb_thickness=10):
         - Create empty thematic map
         - Define concentric layers separated by solar radius + limb thickness, and create thmap
         - Return the thematic map object
+
+    Note copied from Alison Jarvis
     """
 
     # Get the solar radius with class function
