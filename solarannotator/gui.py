@@ -2,7 +2,7 @@ import sys
 import PyQt5
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QWidget, QLabel, QAction, QTabWidget, QPushButton, QFileDialog, QRadioButton, QMessageBox, \
-    QComboBox, QLineEdit, QSizePolicy
+    QComboBox, QLineEdit, QSizePolicy, QCheckBox
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtGui import QIcon, QDoubleValidator
 from datetime import datetime, timedelta
@@ -17,6 +17,8 @@ from matplotlib.backends.qt_compat import QtCore, QtWidgets
 from PIL import ImageColor
 from matplotlib.backends.backend_qt5agg import FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+
+from solarannotator.template import create_thmap_template
 
 if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
@@ -69,7 +71,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.pix = np.vstack((xv.flatten(), yv.flatten())).T
 
         lineprops = dict(color="red", linewidth=2)
-        self.lasso = LassoSelector(self.axs[0], self.onlasso, lineprops=lineprops)
+        self.lasso = LassoSelector(self.axs[0], self.onlasso, props=lineprops)
         self.fig.tight_layout()
 
     def onlasso(self, verts):
@@ -209,7 +211,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.region_patches = []
         self.fig.canvas.draw_idle()
 
-    def loadThematicMap(self, thmap):
+    def loadThematicMap(self, thmap, template=True):
         try:
             download_message = QMessageBox.information(self,
                                                        'Downloading',
@@ -220,9 +222,11 @@ class AnnotationWidget(QtWidgets.QWidget):
             self.data_does_not_exist_popup()
         else:
             self.thmap = thmap
+            if template:
+                self.thmap = create_thmap_template(self.composites)
             self.thmap.copy_195_metadata(self.composites)
             self.history = [thmap.data.copy()]
-            self.thmap_data = thmap.data
+            self.thmap_data = self.thmap.data
             self.thmap_axesimage.set_data(self.thmap_data)
             self.preview_axesimage.set_data(self.composites['94'].data)
             self.fig.canvas.draw_idle()
@@ -479,9 +483,12 @@ class NewFilePopup(QWidget):
         layout = QtWidgets.QHBoxLayout()
         instructions = QLabel("Please select a time for the new file.", self)
         self.dateEdit = QtWidgets.QDateTimeEdit(QDateTime.currentDateTime())
+        self.template_option = QCheckBox("Use template")
+        self.template_option.setChecked(True)
         submit_button = QPushButton("Submit")
         layout.addWidget(instructions)
         layout.addWidget(self.dateEdit)
+        layout.addWidget(self.template_option)
         layout.addWidget(submit_button)
         self.setLayout(layout)
         submit_button.clicked.connect(self.onSubmit)
@@ -493,7 +500,7 @@ class NewFilePopup(QWidget):
                                 {'DATE-OBS': str(self.parent.date),
                                  'DATE': str(datetime.today())},
                                 self.parent.config.solar_class_name)
-        self.parent.annotator.loadThematicMap(new_thmap)
+        self.parent.annotator.loadThematicMap(new_thmap, self.template_option.isChecked())
         self.parent.controls.onTabChange()  # Us
         self.close()
         self.parent.setWindowTitle("SolarAnnotator: {}".format(new_thmap.date_obs))

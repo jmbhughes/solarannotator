@@ -11,7 +11,6 @@ from datetime import timedelta
 import sunpy.map
 from sunpy.coordinates import Helioprojective
 
-
 Image = namedtuple('Image', 'data header')
 
 
@@ -29,9 +28,9 @@ class ImageSet:
     @staticmethod
     def _load_gong_image(date, suvi_195_image):
         # Find an image and download it
-        results = Fido.search(a.Time(date-timedelta(hours=1), date+timedelta(hours=1)),
+        results = Fido.search(a.Time(date - timedelta(hours=1), date + timedelta(hours=1)),
                               a.Wavelength(6563 * u.Angstrom), a.Source("GONG"))
-        selection = results[0][len(results[0])//2]  # only download the middle image
+        selection = results[0][len(results[0]) // 2]  # only download the middle image
         downloads = Fido.fetch(selection)
         with fits.open(downloads[0]) as hdul:
             gong_data = hdul[1].data
@@ -56,7 +55,6 @@ class ImageSet:
 
         return Image(out.data, dict(out.meta))
 
-
     @staticmethod
     def _load_suvi_composites(date):
         satellite = Satellite.GOES16
@@ -77,7 +75,6 @@ class ImageSet:
             os.remove(fn)
         return composites
 
-
     @staticmethod
     def create_empty():
         mapping = {"94": Image(np.zeros((1280, 1280)), {}),
@@ -94,6 +91,52 @@ class ImageSet:
 
     def channels(self):
         return list(self.images.keys())
+
+    def get_solar_radius(self, channel="304", refine=True):
+        """
+        Gets the solar radius from the header of the specified channel
+        :param channel: channel to get radius from
+        :param refine: whether to refine the metadata radius to better approximate the edge
+        :return: solar radius specified in the header
+        """
+
+        # Return the solar radius
+        if channel not in self.channels():
+            raise RuntimeError("Channel requested must be one of {}".format(self.channels()))
+        try:
+            solar_radius = self.images[channel].header['DIAM_SUN'] / 2
+            if refine:
+                composite_img = self.images[channel].data
+                # Determine image size
+                image_size = np.shape(composite_img)[0]
+                # Find center and radial mesh grid
+                center = (image_size / 2) - 0.5
+                xm, ym = np.meshgrid(np.linspace(0, image_size - 1, num=image_size),
+                                     np.linspace(0, image_size - 1, num=image_size))
+                xm_c = xm - center
+                ym_c = ym - center
+                rads = np.sqrt(xm_c ** 2 + ym_c ** 2)
+                # Iterate through radii within a range past the solar radius
+                accuracy = 15
+                rad_iterate = np.linspace(solar_radius, solar_radius + 50, num=accuracy)
+                img_avgs = []
+                for rad in rad_iterate:
+                    # Create a temporary solar image corresponding to the layer
+                    solar_layer = np.zeros((image_size, image_size))
+                    # Find indices in mask of the layer
+                    indx_layer = np.where(rad >= rads)
+                    # Set temporary image corresponding to indices to solar image values
+                    solar_layer[indx_layer] = composite_img[indx_layer]
+                    # Appends average to image averages
+                    img_avgs.append(np.mean(solar_layer))
+                # Find "drop off" where mask causes average image brightness to drop
+                diff_avgs = np.asarray(img_avgs[0:accuracy - 1]) - np.asarray(img_avgs[1:accuracy])
+                # Return the radius that best represents the edge of the sun
+                solar_radius = rad_iterate[np.where(np.amax(diff_avgs))[0] + 1]
+        except KeyError:
+            raise RuntimeError("Header does not include the solar diameter or radius")
+        else:
+            return solar_radius
 
 
 class ThematicMap:
