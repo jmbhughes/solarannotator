@@ -55,4 +55,4 @@ This tool is still under development. There are many features coming.
 - [ ] Multiple normalization options
 - [ ] Robustify the thematic map io for better metadata passing, also use SunPy maps
 - [ ] Add a help guide
-- [ ] Add an ability to load a template when you create a new date
+- [x] Add an ability to load a template when you create a new date
