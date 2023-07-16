@@ -71,7 +71,7 @@ class AnnotationWidget(QtWidgets.QWidget):
         self.pix = np.vstack((xv.flatten(), yv.flatten())).T
 
         lineprops = dict(color="red", linewidth=2)
-        self.lasso = LassoSelector(self.axs[0], self.onlasso, lineprops=lineprops)
+        self.lasso = LassoSelector(self.axs[0], self.onlasso, props=lineprops)
         self.fig.tight_layout()
 
     def onlasso(self, verts):

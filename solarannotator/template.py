@@ -2,12 +2,13 @@ from solarannotator.io import ImageSet, ThematicMap
 from datetime import datetime, timedelta
 import numpy as np
 
+
 def create_mask(radius, image_size):
-    '''
+    """
     Inputs:
         - Radius: Radius (pixels) within which a certain theme should be assigned
         - Image size: tuple of (x, y) size (pixels) that represents size of image
-    '''
+    """
     # Define image center
     center_x = (image_size[0] / 2) - 0.5
     center_y = (image_size[1] / 2) - 0.5
@@ -34,7 +35,7 @@ def create_mask(radius, image_size):
 
 
 def create_thmap_template(image_set, limb_thickness=10):
-    '''
+    """
     Input: Image set object as input, and limb thickness in pixels
     Output: thematic map object
     Process:
@@ -42,7 +43,7 @@ def create_thmap_template(image_set, limb_thickness=10):
         - Create empty thematic map
         - Define concentric layers separated by solar radius + limb thickness, and create thmap
         - Return the thematic map object
-    '''
+    """
 
     # Get the solar radius with class function
     solar_radius = image_set.get_solar_radius()
