@@ -29,9 +29,6 @@ For more details [visit the Packaging guide](https://packaging.python.org/en/lat
 Execute from the terminal after installing by running inside your virtual environment.
 ```SolarAnnotator```
 
-This launches the main software:
-![Screenshot of tool](https://github.com/jmbhughes/solarannotator/blob/master/screenshot.png)
-
 On the left hand side, you will see a preview that can be maniuplated with the controls below. 
 It allows for viewing different SUVI channels with different configurations, e.g. one color versus three color. 
 The preview controls allow you to select the minimum and maximum percentile shown as well as scale
