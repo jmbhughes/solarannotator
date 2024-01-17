@@ -2,7 +2,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/jmbhughes/solarannotator/badge)](https://www.codefactor.io/repository/github/jmbhughes/solarannotator)
 [![PyPI version](https://badge.fury.io/py/solarannotator.svg)](https://badge.fury.io/py/solarannotator)
 [![DOI](https://zenodo.org/badge/286337290.svg)](https://zenodo.org/badge/latestdoi/286337290)
-[![CI](https://github.com/jmbhughes/solarannotator/actions/workflows/ci.yaml/badge.svg)](https://github.com/jmbhughes/solarannotator/actions/workflows/ci.yaml)
+[![CI](https://github.com/jmbhughes/solarannotator/actions/workflows/ci.yaml/badge.svg?event=pull_request)](https://github.com/jmbhughes/solarannotator/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/jmbhughes/solarannotator/graph/badge.svg?token=3YGLITGX6L)](https://codecov.io/gh/jmbhughes/solarannotator)
 
 A tool for annotating solar images with themes. 
